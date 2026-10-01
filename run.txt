@@ -1,0 +1,1 @@
+backend/ dotnet run --project src/OnlineStore.API
