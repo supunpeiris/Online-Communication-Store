@@ -1,0 +1,12 @@
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/bin/Debug/net10.0/OnlineStore.Domain.deps.json
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/bin/Debug/net10.0/OnlineStore.Domain.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/bin/Debug/net10.0/OnlineStore.Domain.pdb
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.AssemblyInfoInputs.cache
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.AssemblyInfo.cs
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.csproj.CoreCompileInputs.cache
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.sourcelink.json
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/refint/OnlineStore.Domain.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/OnlineStore.Domain.pdb
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Domain/obj/Debug/net10.0/ref/OnlineStore.Domain.dll

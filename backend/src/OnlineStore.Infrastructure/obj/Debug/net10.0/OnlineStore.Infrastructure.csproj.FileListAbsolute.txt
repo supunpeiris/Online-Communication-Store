@@ -1,0 +1,16 @@
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/bin/Debug/net10.0/OnlineStore.Infrastructure.deps.json
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/bin/Debug/net10.0/OnlineStore.Infrastructure.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/bin/Debug/net10.0/OnlineStore.Infrastructure.pdb
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/bin/Debug/net10.0/OnlineStore.Domain.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/bin/Debug/net10.0/OnlineStore.Domain.pdb
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.csproj.AssemblyReference.cache
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.AssemblyInfoInputs.cache
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.AssemblyInfo.cs
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.sourcelink.json
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineSt.A30D6540.Up2Date
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/refint/OnlineStore.Infrastructure.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/OnlineStore.Infrastructure.pdb
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/obj/Debug/net10.0/ref/OnlineStore.Infrastructure.dll
