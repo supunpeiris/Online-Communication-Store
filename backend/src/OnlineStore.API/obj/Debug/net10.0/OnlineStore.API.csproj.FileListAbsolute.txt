@@ -127,3 +127,13 @@
 /Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/obj/Debug/net10.0/ref/OnlineStore.API.dll
 /Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/OnlineStore.Application.dll
 /Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/OnlineStore.Application.pdb
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/BCrypt-Net-Next.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Abstractions.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Logging.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll
