@@ -7,8 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// Register the Category Service
+// Register Services
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+
 
 // Register Entity Framework Core with PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
