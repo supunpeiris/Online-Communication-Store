@@ -15,6 +15,27 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+               [HttpPost("request-otp")]
+    public async Task<IActionResult> RequestOtp(RequestOtpDto dto)
+    {
+        try
+        {
+            await _authService.RequestOtpAsync(dto);
+            return Ok(new { message = "OTP sent to email." });
+        }
+        catch (Exception ex) 
+        { 
+            // This will print the EXACT reason Brevo is failing in your terminal
+            Console.WriteLine($"\n=== SMTP ERROR TRIGGERED ===\n{ex.Message}\n============================\n");
+
+            if (ex.Message == "Email is already registered.") 
+                return BadRequest(new { message = ex.Message });
+
+            return BadRequest(new { message = "Failed to send OTP email. Please try again later." }); 
+        }
+    }
+
+
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
@@ -23,8 +44,16 @@ public class AuthController : ControllerBase
             var result = await _authService.RegisterAsync(dto);
             return Ok(result);
         }
-        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        catch (Exception ex) 
+        { 
+            if (ex.Message == "Invalid or expired OTP." || ex.Message == "Email already exists.")
+                return BadRequest(new { message = ex.Message });
+
+            return BadRequest(new { message = "An error occurred during registration. Please try again." }); 
+        }
     }
+
+
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)

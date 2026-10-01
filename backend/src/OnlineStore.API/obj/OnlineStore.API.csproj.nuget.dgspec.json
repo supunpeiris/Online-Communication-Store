@@ -562,6 +562,14 @@
               "target": "Package",
               "version": "[4.2.0, )"
             },
+            "MailKit": {
+              "target": "Package",
+              "version": "[4.18.1, )"
+            },
+            "Microsoft.Extensions.Caching.Memory": {
+              "target": "Package",
+              "version": "[10.0.12, )"
+            },
             "Microsoft.Extensions.Configuration.Abstractions": {
               "target": "Package",
               "version": "[10.0.12, )"

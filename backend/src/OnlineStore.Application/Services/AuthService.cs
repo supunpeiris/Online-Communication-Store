@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using OnlineStore.Application.DTOs.Auth;
 using OnlineStore.Application.Interfaces;
@@ -15,30 +16,58 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
+    private readonly IMemoryCache _cache;
 
-    public AuthService(AppDbContext context, IConfiguration configuration)
+    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService emailService, IMemoryCache cache)
     {
         _context = context;
         _configuration = configuration;
+        _emailService = emailService;
+        _cache = cache;
+    }
+
+    public async Task RequestOtpAsync(RequestOtpDto dto)
+    {
+        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+            throw new Exception("Email is already registered.");
+
+        // Generate a 6-digit OTP
+        var otp = new Random().Next(100000, 999999).ToString();
+
+        // Save OTP in memory for 10 minutes
+        _cache.Set($"OTP_{dto.Email}", otp, TimeSpan.FromMinutes(10));
+
+        // Send Email via Brevo
+        await _emailService.SendOtpEmailAsync(dto.Email, otp);
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
+        // 1. Verify OTP
+        if (!_cache.TryGetValue($"OTP_{dto.Email}", out string? savedOtp) || savedOtp != dto.Otp)
+            throw new Exception("Invalid or expired OTP.");
+
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
             throw new Exception("Email already exists.");
 
+        // 2. Force Role to "Customer"
         var user = new User
         {
             Name = dto.Name,
             Email = dto.Email,
-            Role = dto.Role,
+            Phone = dto.Phone,
+            Role = "Customer", 
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        return new AuthResponseDto { Message = "User registered successfully" };
+        // Clear OTP after successful registration
+        _cache.Remove($"OTP_{dto.Email}");
+
+        return new AuthResponseDto { Message = "Customer registered successfully" };
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)

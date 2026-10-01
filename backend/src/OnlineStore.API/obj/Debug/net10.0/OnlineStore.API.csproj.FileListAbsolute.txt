@@ -137,3 +137,6 @@
 /Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 /Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
 /Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/BouncyCastle.Cryptography.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/MailKit.dll
+/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.API/bin/Debug/net10.0/MimeKit.dll
