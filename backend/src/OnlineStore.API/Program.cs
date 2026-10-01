@@ -1,9 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using OnlineStore.Infrastructure.Data;
+using OnlineStore.Application.Interfaces;
+using OnlineStore.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+// Register the Category Service
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 // Register Entity Framework Core with PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>

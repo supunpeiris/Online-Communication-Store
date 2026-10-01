@@ -11,6 +11,7 @@
           "Microsoft.AspNetCore.OpenApi": "10.0.10",
           "Microsoft.EntityFrameworkCore.Design": "10.0.12",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3",
+          "OnlineStore.Application": "1.0.0",
           "OnlineStore.Infrastructure": "1.0.0"
         },
         "runtime": {
@@ -497,6 +498,18 @@
           }
         }
       },
+      "OnlineStore.Application/1.0.0": {
+        "dependencies": {
+          "OnlineStore.Domain": "1.0.0",
+          "OnlineStore.Infrastructure": "1.0.0"
+        },
+        "runtime": {
+          "OnlineStore.Application.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
       "OnlineStore.Domain/1.0.0": {
         "runtime": {
           "OnlineStore.Domain.dll": {
@@ -706,6 +719,11 @@
       "sha512": "sha512-aRZlojCCGEHDKqh43jaDgaVpYETsgd7Nx4g1zwLKMtv4iTo0627715ajEFNpEEBTgLmvZuv8K0EVxc3sM4NWJA==",
       "path": "system.composition.typedparts/9.0.0",
       "hashPath": "system.composition.typedparts.9.0.0.nupkg.sha512"
+    },
+    "OnlineStore.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     },
     "OnlineStore.Domain/1.0.0": {
       "type": "project",

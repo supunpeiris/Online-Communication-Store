@@ -669,6 +669,20 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
+      "OnlineStore.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "OnlineStore.Domain": "1.0.0",
+          "OnlineStore.Infrastructure": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/OnlineStore.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/OnlineStore.Application.dll": {}
+        }
+      },
       "OnlineStore.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
@@ -2221,6 +2235,11 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "OnlineStore.Application/1.0.0": {
+      "type": "project",
+      "path": "../OnlineStore.Application/OnlineStore.Application.csproj",
+      "msbuildProject": "../OnlineStore.Application/OnlineStore.Application.csproj"
+    },
     "OnlineStore.Domain/1.0.0": {
       "type": "project",
       "path": "../OnlineStore.Domain/OnlineStore.Domain.csproj",
@@ -2237,6 +2256,7 @@
       "Microsoft.AspNetCore.OpenApi >= 10.0.10",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.12",
       "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.3",
+      "OnlineStore.Application >= 1.0.0",
       "OnlineStore.Infrastructure >= 1.0.0"
     ]
   },
@@ -2266,6 +2286,9 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
+            "/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Application/OnlineStore.Application.csproj": {
+              "projectPath": "/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Application/OnlineStore.Application.csproj"
+            },
             "/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/OnlineStore.Infrastructure.csproj": {
               "projectPath": "/Users/supunvidarshana/Desktop/My projects/Online-Communication-Store/backend/src/OnlineStore.Infrastructure/OnlineStore.Infrastructure.csproj"
             }
