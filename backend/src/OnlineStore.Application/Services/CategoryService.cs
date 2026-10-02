@@ -29,4 +29,26 @@ public class CategoryService : ICategoryService
 
         return new CategoryDto { Id = category.Id, Name = category.Name };
     }
+
+    public async Task<CategoryDto> UpdateCategoryAsync(int id, CreateCategoryDto dto)
+    {
+        var category = await _context.Categories.FindAsync(id);
+        if (category == null) throw new Exception("Category not found");
+
+        category.Name = dto.Name;
+        await _context.SaveChangesAsync();
+
+        return new CategoryDto { Id = category.Id, Name = category.Name };
+    }
+
+    public async Task<bool> DeleteCategoryAsync(int id)
+    {
+        var category = await _context.Categories.FindAsync(id);
+        if (category == null) return false;
+
+        _context.Categories.Remove(category);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
 }

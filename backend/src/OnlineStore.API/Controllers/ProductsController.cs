@@ -5,8 +5,8 @@ using OnlineStore.Application.Interfaces;
 
 namespace OnlineStore.API.Controllers;
 
-[ApiController]
 [Route("api/v1/[controller]")]
+[ApiController]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -16,39 +16,34 @@ public class ProductsController : ControllerBase
         _productService = productService;
     }
 
-    // Admins, Staff, and Customers can all read
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff,Customer")]
     public async Task<IActionResult> GetAll()
     {
-        var products = await _productService.GetAllProductsAsync();
-        return Ok(products);
+        return Ok(await _productService.GetAllProductsAsync());
     }
 
-    // Only Admins can add
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> Create([FromBody] CreateProductDto dto)
     {
-        var product = await _productService.CreateProductAsync(dto);
-        return CreatedAtAction(nameof(GetAll), new { id = product.Id }, product);
-    }
-    
-    // Admins and Staff can update
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Staff")]
-    public IActionResult Update(int id, [FromBody] CreateProductDto dto)
-    {
-        // Add Update logic to ProductService later
-        return Ok(new { message = "Update authorized" });
+        try { return Ok(await _productService.CreateProductAsync(dto)); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 
-    // Only Admins can delete
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IActionResult> Update(int id, [FromBody] CreateProductDto dto)
+    {
+        try { return Ok(await _productService.UpdateProductAsync(id, dto)); }
+        catch (Exception ex) { return NotFound(new { message = ex.Message }); }
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        // Add Delete logic to ProductService later
-        return Ok(new { message = "Delete authorized" });
+        var result = await _productService.DeleteProductAsync(id);
+        if (!result) return NotFound(new { message = "Product not found" });
+        return Ok(new { message = "Product deleted successfully" });
     }
 }

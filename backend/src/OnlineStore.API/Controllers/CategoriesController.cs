@@ -34,21 +34,29 @@ public class CategoriesController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { id = category.Id }, category);
     }
 
-    // Staff (and Admins) can update
+       // Staff and Admins can update
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,Staff")]
-    public IActionResult Update(int id, [FromBody] CreateCategoryDto dto)
+    public async Task<IActionResult> Update(int id, [FromBody] CreateCategoryDto dto)
     {
-        // Update logic will go here
-        return Ok(new { message = $"Category {id} update authorized." });
+        try
+        {
+            var category = await _categoryService.UpdateCategoryAsync(id, dto);
+            return Ok(category);
+        }
+        catch (Exception ex) { return NotFound(new { message = ex.Message }); }
     }
 
     // Only Admins can delete
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        // Delete logic will go here
-        return Ok(new { message = $"Category {id} delete authorized." });
+        var result = await _categoryService.DeleteCategoryAsync(id);
+        if (!result) return NotFound(new { message = "Category not found" });
+        
+        return Ok(new { message = "Category deleted successfully" });
     }
+
+    
 }
