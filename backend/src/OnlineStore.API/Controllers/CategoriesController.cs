@@ -18,7 +18,7 @@ public class CategoriesController : ControllerBase
 
     // Admin, Staff, and Customers can read
     [HttpGet]
-    [Authorize(Roles = "Admin,Staff,Customer")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
         var categories = await _categoryService.GetAllCategoriesAsync();

@@ -51,7 +51,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+
+// 1. Move CORS before static files
 app.UseCors("AllowReactApp");
+
+// 2. Explicitly create and serve the uploads folder
+var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+if (!Directory.Exists(uploadsFolder))
+{
+    Directory.CreateDirectory(uploadsFolder);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsFolder),
+    RequestPath = "/uploads"
+});
 
 // IMPORTANT: Authentication must be called BEFORE Authorization
 app.UseAuthentication(); 
@@ -59,3 +74,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
+
