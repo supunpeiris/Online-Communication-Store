@@ -24,6 +24,17 @@ public class ProductService : IProductService
         return products.Select(MapToDto);
     }
 
+    // <-- NEW METHOD TO GET A SINGLE PRODUCT -->
+    public async Task<ProductDto> GetProductByIdAsync(int id)
+    {
+        var product = await _context.Products
+            .Include(p => p.Category)
+            .FirstOrDefaultAsync(p => p.Id == id);
+            
+        if (product == null) throw new Exception("Product not found");
+        return MapToDto(product);
+    }
+
     public async Task<ProductDto> CreateProductAsync(CreateProductDto dto)
     {
         if (!await _context.Categories.AnyAsync(c => c.Id == dto.CategoryId))
@@ -32,7 +43,6 @@ public class ProductService : IProductService
         var product = new Product
         {
             Name = dto.Name,
-            // Auto-generate a random SKU if the frontend leaves it blank
             Sku = string.IsNullOrWhiteSpace(dto.Sku) ? $"SKU-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}" : dto.Sku,
             Brand = dto.Brand,
             Description = dto.Description,
@@ -84,7 +94,6 @@ public class ProductService : IProductService
         return true;
     }
 
-    // Centralized mapping method to keep code clean
     private static ProductDto MapToDto(Product product)
     {
         return new ProductDto

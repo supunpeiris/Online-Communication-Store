@@ -17,9 +17,19 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
         return Ok(await _productService.GetAllProductsAsync());
+    }
+
+    // <-- NEW ENDPOINT TO FETCH BY ID -->
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetById(int id)
+    {
+        try { return Ok(await _productService.GetProductByIdAsync(id)); }
+        catch (Exception ex) { return NotFound(new { message = ex.Message }); }
     }
 
     [HttpPost]
