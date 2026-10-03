@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Check, AlertCircle, Loader2, Heart, ChevronRight, Truck, Star } from 'lucide-react';
 import api from '../../services/api';
+import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 
 export default function ProductDetails() {
   const { id } = useParams();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
 
-  // Review Form State
   const [reviewForm, setReviewForm] = useState({ rating: 0, review: '', name: '', email: '' });
   const [hoveredStar, setHoveredStar] = useState(0);
 
@@ -26,7 +29,7 @@ export default function ProductDetails() {
       }
     };
     fetchProduct();
-    window.scrollTo(0, 0); // Scroll to top when page loads
+    window.scrollTo(0, 0);
   }, [id]);
 
   if (isLoading) {
@@ -55,7 +58,6 @@ export default function ProductDetails() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       
-      {/* Breadcrumb Navigation */}
       <div className="bg-white border-b border-gray-100 py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center text-sm">
           <Link to="/" className="text-gray-500 hover:text-blue-600 transition-colors">Home</Link>
@@ -70,10 +72,8 @@ export default function ProductDetails() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         
-        {/* Top Section: Two-Card Layout */}
         <div className="flex flex-col lg:flex-row gap-8 mb-8">
           
-          {/* Card 1: Image Gallery */}
           <div className="w-full lg:w-1/2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex items-center justify-center relative min-h-[400px]">
             {product.imageUrl ? (
               <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-[500px] object-contain mix-blend-multiply" />
@@ -87,7 +87,6 @@ export default function ProductDetails() {
             )}
           </div>
 
-          {/* Card 2: Product Details & Actions */}
           <div className="w-full lg:w-1/2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col">
             <h1 className="text-3xl font-black text-gray-900 mb-6 uppercase">{product.name}</h1>
             
@@ -108,7 +107,6 @@ export default function ProductDetails() {
               )}
             </div>
 
-            {/* Quantity & Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden shrink-0">
                 <button 
@@ -130,28 +128,33 @@ export default function ProductDetails() {
               </div>
               
               <button 
+                onClick={() => addToCart(product, quantity)}
                 disabled={product.stockQuantity <= 0}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm"
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 ADD TO CART
               </button>
               
               <button 
+                onClick={() => { addToCart(product, quantity); }}
                 disabled={product.stockQuantity <= 0}
-                className="flex-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm"
+                className="flex-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 BUY NOW
               </button>
             </div>
 
-            {/* Secondary Actions */}
+            {/* Wishlist Toggle Action */}
             <div className="flex items-center space-x-6 text-sm font-bold text-gray-700 border-b border-gray-100 pb-6 mb-6">
-              <button className="flex items-center hover:text-blue-600 transition-colors group">
-                <Heart className="w-4 h-4 mr-2 text-gray-400 group-hover:text-red-500" /> Add to wishlist
+              <button 
+                onClick={() => toggleWishlist(product)}
+                className="flex items-center hover:text-blue-600 transition-colors group cursor-pointer"
+              >
+                <Heart className={`w-4 h-4 mr-2 ${isInWishlist(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-red-500'}`} /> 
+                {isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
               </button>
             </div>
 
-            {/* Delivery Info Box */}
             <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
               <div className="flex items-start">
                 <Truck className="w-6 h-6 text-blue-600 mt-1 mr-4 shrink-0" />
@@ -175,7 +178,6 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        {/* Bottom Section 1: Description */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Description</h2>
           <div className="prose max-w-none text-gray-600 whitespace-pre-line">
@@ -183,25 +185,20 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        {/* Bottom Section 2: Customer Reviews */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
           <h2 className="text-xl font-bold text-gray-900 mb-8">Customer Reviews</h2>
           
           <div className="flex flex-col lg:flex-row gap-12">
-            {/* Reviews List */}
             <div className="flex-1">
               <h3 className="font-bold text-gray-900 mb-4">Reviews</h3>
               <p className="text-gray-500 text-sm">There are no reviews yet.</p>
             </div>
 
-            {/* Add Review Form */}
             <div className="flex-1 lg:max-w-xl">
               <h3 className="font-bold text-gray-900 mb-2">Be the first to review "{product.name}"</h3>
               <p className="text-sm text-gray-500 mb-6">Your email address will not be published. Required fields are marked *</p>
               
               <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); alert("Review submitted!"); }}>
-                
-                {/* Star Rating Selection */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Your rating <span className="text-red-500">*</span></label>
                   <div className="flex space-x-1">
@@ -212,7 +209,7 @@ export default function ProductDetails() {
                         onMouseEnter={() => setHoveredStar(star)}
                         onMouseLeave={() => setHoveredStar(0)}
                         onClick={() => setReviewForm({...reviewForm, rating: star})}
-                        className="focus:outline-none"
+                        className="focus:outline-none cursor-pointer"
                       >
                         <Star 
                           className={`w-5 h-5 ${
@@ -260,14 +257,7 @@ export default function ProductDetails() {
                   </div>
                 </div>
 
-                <div className="flex items-center mt-2">
-                  <input type="checkbox" id="save-info" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                  <label htmlFor="save-info" className="ml-2 block text-sm text-gray-600">
-                    Save my name, email, and website in this browser for the next time I comment.
-                  </label>
-                </div>
-
-                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm">
+                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm cursor-pointer">
                   SUBMIT
                 </button>
               </form>
