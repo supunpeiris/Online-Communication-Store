@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, Phone, AlertCircle, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import api from '../../services/api';
 
 export default function Register() {
   const navigate = useNavigate();
   
-  // Added confirmPassword to state
   const [formData, setFormData] = useState({ 
     name: '', email: '', phone: '', password: '', confirmPassword: '' 
   });
   const [otp, setOtp] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,19 +22,15 @@ export default function Register() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Step 1: Validate and Request OTP
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     setError('');
 
-    // 1. Password Match Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
 
-    // 2. Strict Phone Number Validation
-    // Matches exact 10 digits starting with 0 OR +94 followed by 9 digits
     const phoneRegex = /^(0\d{9}|\+94\d{9})$/;
     if (!phoneRegex.test(formData.phone)) {
       setError('Phone number must be exactly 10 digits (e.g., 0775191513) or use the +94 format (+94775191513).');
@@ -53,16 +50,13 @@ export default function Register() {
     }
   };
 
-  // Step 2: Confirm OTP & Register
   const handleVerifyAndRegister = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Exclude confirmPassword from the API payload
       const { confirmPassword, ...submitData } = formData;
-      
       await api.post('/auth/register', { ...submitData, otp });
       navigate('/login');
     } catch (err) {
@@ -141,14 +135,21 @@ export default function Register() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 name="password"
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-12 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 
@@ -157,21 +158,28 @@ export default function Register() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input 
-                type="password" 
+                type={showConfirmPassword ? "text" : "password"} 
                 name="confirmPassword"
                 required
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-12 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 
           <button 
             type="submit" 
             disabled={isLoading || showOtpModal}
-            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center mt-6"
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center mt-6 cursor-pointer"
           >
             {isLoading && !showOtpModal ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
             Continue
@@ -182,7 +190,6 @@ export default function Register() {
           Already have an account? <Link to="/login" className="text-blue-500 font-medium hover:underline">Sign In</Link>
         </p>
 
-        {/* OTP Modal Popup */}
         {showOtpModal && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-8 z-10 text-center border border-gray-100">
             <CheckCircle2 className="w-12 h-12 text-green-500 mb-4" />
@@ -202,7 +209,7 @@ export default function Register() {
               <button 
                 type="submit" 
                 disabled={isLoading}
-                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center"
+                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center cursor-pointer"
               >
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 Verify & Register
@@ -210,7 +217,7 @@ export default function Register() {
               <button 
                 type="button"
                 onClick={() => setShowOtpModal(false)}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
