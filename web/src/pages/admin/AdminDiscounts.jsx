@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Tag, Plus, Edit, Trash2, Loader2, AlertCircle, CheckCircle2, X, AlertTriangle, Search } from 'lucide-react';
 import api from '../../services/api';
 import TablePagination from '../../components/common/TablePagination';
+import { getLocalTodayString, getFutureDateString } from '../../utils/discount';
 
 export default function AdminDiscounts() {
   const [discounts, setDiscounts] = useState([]);
@@ -52,7 +53,15 @@ export default function AdminDiscounts() {
   const handleOpenAdd = () => {
     setEditMode(false);
     setProductSearchQuery('');
-    setFormData({ title: '', discountType: 'Percentage', discountValue: '', startDate: '', endDate: '', status: 'Active', productIds: [] });
+    setFormData({
+      title: '',
+      discountType: 'Percentage',
+      discountValue: '',
+      startDate: getLocalTodayString(),
+      endDate: getFutureDateString(30),
+      status: 'Active',
+      productIds: []
+    });
     setErrorMsg('');
     setShowModal(true);
   };
@@ -61,14 +70,18 @@ export default function AdminDiscounts() {
     setEditMode(true);
     setCurrentId(disc.id);
     setProductSearchQuery('');
+    const linkedFromProducts = products.filter(p => p.discountId === disc.id).map(p => p.id);
+    const linkedFromDisc = disc.products ? disc.products.map(p => p.id) : [];
+    const allLinkedIds = Array.from(new Set([...linkedFromDisc, ...linkedFromProducts]));
+
     setFormData({
       title: disc.title,
       discountType: disc.discountType,
       discountValue: disc.discountValue,
-      startDate: disc.startDate ? disc.startDate.split('T')[0] : '',
-      endDate: disc.endDate ? disc.endDate.split('T')[0] : '',
+      startDate: disc.startDate ? disc.startDate.split('T')[0] : getLocalTodayString(),
+      endDate: disc.endDate ? disc.endDate.split('T')[0] : getFutureDateString(30),
       status: disc.status,
-      productIds: disc.products ? disc.products.map(p => p.id) : []
+      productIds: allLinkedIds
     });
     setErrorMsg('');
     setShowModal(true);
@@ -79,8 +92,8 @@ export default function AdminDiscounts() {
     setErrorMsg('');
 
     // Frontend Date Validations
-    const today = new Date().toISOString().split('T')[0];
-    if (formData.startDate < today) {
+    const today = getLocalTodayString();
+    if (!editMode && formData.startDate < today) {
       setErrorMsg('Start date must be today or a future date.');
       return;
     }
@@ -209,15 +222,19 @@ export default function AdminDiscounts() {
                       {new Date(d.startDate).toLocaleDateString()} — {new Date(d.endDate).toLocaleDateString()}
                     </td>
                     <td className="py-4 text-xs text-gray-600">
-                      {d.products && d.products.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {d.products.map(p => (
-                            <span key={p.id} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">{p.name}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">None</span>
-                      )}
+                      {(() => {
+                        const linked = products.filter(p => p.discountId === d.id);
+                        const displayList = linked.length > 0 ? linked : (d.products || []);
+                        return displayList.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {displayList.map(p => (
+                              <span key={p.id} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">{p.name}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">None</span>
+                        );
+                      })()}
                     </td>
                     <td className="py-4">
                       <span className="bg-green-50 text-green-700 font-bold text-xs px-2.5 py-1 rounded-full uppercase">{d.status}</span>

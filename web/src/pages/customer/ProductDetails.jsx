@@ -9,10 +9,16 @@ import {
   ChevronRight,
   Truck,
   Star,
+  Tag,
 } from "lucide-react";
 import api from "../../services/api";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import {
+  isDiscountActive,
+  calculateFinalPrice,
+  formatDiscountBadgeText,
+} from "../../utils/discount";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -34,8 +40,24 @@ export default function ProductDetails() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await api.get(`/products/${id}`);
-        setProduct(response.data);
+        const [prodRes, discRes] = await Promise.all([
+          api.get(`/products/${id}`),
+          api.get("/discounts").catch(() => ({ data: [] })),
+        ]);
+        let prod = prodRes.data;
+        if (prod) {
+          if (!prod.discount && discRes.data?.length > 0) {
+            const matchedDisc = discRes.data.find(
+              (d) =>
+                (prod.discountId && d.id === prod.discountId) ||
+                (d.products && d.products.some((p) => p && p.id === prod.id))
+            );
+            if (matchedDisc) {
+              prod = { ...prod, discountId: matchedDisc.id, discount: matchedDisc };
+            }
+          }
+          setProduct(prod);
+        }
       } catch (err) {
         setError("Failed to load product details.");
       } finally {
@@ -76,27 +98,10 @@ export default function ProductDetails() {
     );
   }
 
-  // Date validation helper for discounts
-    const isDiscountActive = (discount) => {
-    if (!discount || discount.status !== "Active") return false;
-    
-    // Normalize dates to YYYY-MM-DD strings to avoid timezone discrepancy bugs
-    const todayStr = new Date().toISOString().split("T")[0];
-    const startStr = discount.startDate ? discount.startDate.split("T")[0] : "";
-    const endStr = discount.endDate ? discount.endDate.split("T")[0] : "";
+  const activeDiscount =
+    product && isDiscountActive(product.discount) ? product.discount : null;
 
-    return todayStr >= startStr && todayStr <= endStr;
-  };
-
-  const activeDiscount = isDiscountActive(product.discount)
-    ? product.discount
-    : null;
-
-  const finalPrice = activeDiscount
-    ? activeDiscount.discountType === "Percentage"
-      ? product.price * (1 - activeDiscount.discountValue / 100)
-      : Math.max(0, product.price - activeDiscount.discountValue)
-    : product.price;
+  const finalPrice = product ? calculateFinalPrice(product) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -127,10 +132,9 @@ export default function ProductDetails() {
           <div className="w-full lg:w-1/2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex items-center justify-center relative min-h-[400px]">
             {/* Top-Left Discount Badge */}
             {activeDiscount && (
-              <span className="absolute top-4 left-4 z-10 bg-red-500 text-white text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
-                {activeDiscount.discountType === "Percentage"
-                  ? `-${activeDiscount.discountValue}% OFF`
-                  : `-${activeDiscount.discountValue} Rs OFF`}
+              <span className="absolute top-4 left-4 z-10 bg-gradient-to-r from-red-600 to-rose-500 text-white text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" />
+                {formatDiscountBadgeText(activeDiscount)}
               </span>
             )}
 
@@ -170,13 +174,27 @@ export default function ProductDetails() {
               <span className="text-gray-900">{product.sku}</span>
             </div>
 
-            <div className="flex items-baseline space-x-3 mb-4 border-b border-gray-100 pb-6">
-              <div className="text-4xl font-black text-orange-500">
-                Rs. {finalPrice.toFixed(2)}
+            <div className="mb-4 border-b border-gray-100 pb-6">
+              <div className="flex items-baseline space-x-3">
+                <div className="text-4xl font-black text-orange-500">
+                  Rs. {finalPrice.toFixed(2)}
+                </div>
+                {activeDiscount && (
+                  <div className="text-xl text-gray-400 line-through font-bold">
+                    Rs. {product.price.toFixed(2)}
+                  </div>
+                )}
               </div>
               {activeDiscount && (
-                <div className="text-xl text-gray-400 line-through font-bold">
-                  Rs. {product.price.toFixed(2)}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="bg-red-50 text-red-600 border border-red-200 text-xs font-black px-2.5 py-1 rounded-lg">
+                    SAVE Rs. {(product.price - finalPrice).toFixed(2)} ({formatDiscountBadgeText(activeDiscount)})
+                  </span>
+                  {activeDiscount.title && (
+                    <span className="text-xs text-gray-500 font-medium">
+                      Special Offer: {activeDiscount.title}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

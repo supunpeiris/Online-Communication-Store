@@ -61,7 +61,7 @@ public class DiscountsController : ControllerBase
         var startDate = dto.StartDate.Date;
         var endDate = dto.EndDate.Date;
 
-        if (startDate < today)
+        if (startDate < today.AddDays(-1))
         {
             return BadRequest(new { message = "Start date must be today or a future date." });
         }
@@ -118,14 +118,8 @@ public class DiscountsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] CreateDiscountDto dto)
     {
         // Date Validations
-        var today = DateTime.UtcNow.Date;
         var startDate = dto.StartDate.Date;
         var endDate = dto.EndDate.Date;
-
-        if (startDate < today)
-        {
-            return BadRequest(new { message = "Start date must be today or a future date." });
-        }
 
         if (endDate <= startDate)
         {

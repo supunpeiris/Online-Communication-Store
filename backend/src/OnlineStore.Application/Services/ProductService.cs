@@ -85,6 +85,10 @@ public class ProductService : IProductService
         product.ImageUrl = dto.ImageUrl;
         product.Status = dto.Status;
         product.CategoryId = dto.CategoryId;
+        if (dto.DiscountId.HasValue)
+        {
+            product.DiscountId = dto.DiscountId;
+        }
 
         await _context.SaveChangesAsync();
         await _context.Entry(product).Reference(p => p.Category).LoadAsync();
@@ -118,6 +122,7 @@ public class ProductService : IProductService
             Status = product.Status,
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.Name ?? "Unknown",
+            DiscountId = product.DiscountId,
             Discount = product.Discount != null ? new DiscountDto // <-- Map Discount object to DTO
             {
                 Id = product.Discount.Id,

@@ -47,15 +47,7 @@ public class ProductsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAll()
-    {
-        // Explicitly include Discount so storefront sees it
-        var products = await _context.Products
-            .Include(p => p.Category)
-            .Include(p => p.Discount)
-            .ToListAsync();
-        return Ok(products);
-    }
+    public async Task<IActionResult> GetAll() => Ok(await _productService.GetAllProductsAsync());
 
     [HttpGet("{id}")]
     [AllowAnonymous]
@@ -63,12 +55,7 @@ public class ProductsController : ControllerBase
     {
         try 
         { 
-            var product = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.Discount)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (product == null) return NotFound(new { message = "Product not found" });
+            var product = await _productService.GetProductByIdAsync(id);
             return Ok(product); 
         }
         catch (Exception ex) { return NotFound(new { message = ex.Message }); }

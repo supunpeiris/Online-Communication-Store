@@ -13,6 +13,12 @@ import {
 import api from "../../services/api";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import {
+  isDiscountActive,
+  calculateFinalPrice,
+  formatDiscountBadgeText,
+  attachDiscounts,
+} from "../../utils/discount";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -36,11 +42,13 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, discRes] = await Promise.all([
           api.get("/products"),
           api.get("/categories"),
+          api.get("/discounts").catch(() => ({ data: [] })),
         ]);
-        setProducts(prodRes.data);
+        const enrichedProducts = attachDiscounts(prodRes.data, discRes.data);
+        setProducts(enrichedProducts);
         setCategories(catRes.data);
       } catch (err) {
         console.error("Failed to fetch catalog data", err);
@@ -72,26 +80,6 @@ export default function Home() {
     }
   };
 
-    const isDiscountActive = (discount) => {
-    if (!discount || discount.status !== "Active") return false;
-    
-    // Normalize dates to YYYY-MM-DD strings to avoid timezone discrepancy bugs
-    const todayStr = new Date().toISOString().split("T")[0];
-    const startStr = discount.startDate ? discount.startDate.split("T")[0] : "";
-    const endStr = discount.endDate ? discount.endDate.split("T")[0] : "";
-
-    return todayStr >= startStr && todayStr <= endStr;
-  };
-
-
-  const calculateFinalPrice = (product) => {
-    if (!isDiscountActive(product.discount)) return product.price;
-    if (product.discount.discountType === "Percentage") {
-      return product.price * (1 - product.discount.discountValue / 100);
-    } else {
-      return Math.max(0, product.price - product.discount.discountValue);
-    }
-  };
 
   return (
     <div className="flex w-full min-h-[calc(100vh-[73px])] bg-gray-50">
@@ -213,10 +201,9 @@ export default function Home() {
                   >
                     {/* Top-Left Discount Badge */}
                     {activeDiscount && (
-                      <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                        {product.discount.discountType === "Percentage"
-                          ? `-${product.discount.discountValue}%`
-                          : `-${product.discount.discountValue} Rs`}
+                      <span className="absolute top-3 left-3 z-10 bg-gradient-to-r from-red-600 to-rose-500 text-white text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1">
+                        <Tag className="w-3 h-3" />
+                        {formatDiscountBadgeText(product.discount)}
                       </span>
                     )}
 
@@ -302,6 +289,13 @@ export default function Home() {
                               </span>
                             )}
                           </div>
+                          {activeDiscount && (
+                            <div className="mt-1">
+                              <span className="inline-block text-[10px] font-extrabold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">
+                                Save Rs. {(product.price - finalPrice).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
