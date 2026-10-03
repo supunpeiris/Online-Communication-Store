@@ -236,9 +236,25 @@ export default function AdminDiscounts() {
                         );
                       })()}
                     </td>
-                    <td className="py-4">
-                      <span className="bg-green-50 text-green-700 font-bold text-xs px-2.5 py-1 rounded-full uppercase">{d.status}</span>
+                                        <td className="py-4">
+                      {(() => {
+                        const todayStr = getLocalTodayString();
+                        const endStr = d.endDate ? String(d.endDate).slice(0, 10) : "";
+                        const isExpired = endStr && todayStr > endStr;
+                        const displayStatus = isExpired ? "INACTIVE" : d.status;
+
+                        return (
+                          <span className={`font-bold text-xs px-2.5 py-1 rounded-full uppercase ${
+                            displayStatus.toLowerCase() === 'active' 
+                              ? 'bg-green-50 text-green-700' 
+                              : 'bg-red-50 text-red-600'
+                          }`}>
+                            {displayStatus}
+                          </span>
+                        );
+                      })()}
                     </td>
+
                     <td className="py-4 text-right space-x-2">
                       <button onClick={() => handleOpenEdit(d)} className="p-2 bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-xl inline-flex cursor-pointer"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => confirmDelete(d)} className="p-2 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-xl inline-flex cursor-pointer"><Trash2 className="w-4 h-4" /></button>
