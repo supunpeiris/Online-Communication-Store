@@ -15,6 +15,7 @@ import {
   User as UserIcon,
   Home as HomeIcon,
   LogOut,
+  Tag, // <-- Import Tag icon for Discounts
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -116,20 +117,34 @@ export default function AdminLayout() {
             Catalog
           </p>
           <nav className="space-y-1">
-            <Link
+            <NavLink
               to="/admin/categories"
-              className="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
             >
               <Layout className="w-5 h-5 mr-3 text-gray-400" />
               Categories
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/admin/products"
-              className="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
             >
               <Package className="w-5 h-5 mr-3 text-gray-400" />
               Products
-            </Link>
+            </NavLink>
+            {/* Added Discounts directly below Products */}
+            <NavLink
+              to="/admin/discounts"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
+            >
+              <Tag className="w-5 h-5 mr-3 text-gray-400" />
+              Discounts
+            </NavLink>
           </nav>
         </div>
       </aside>

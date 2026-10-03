@@ -13,6 +13,18 @@ public class ProductDto
     public string Status { get; set; } = string.Empty;
     public int CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
+    public DiscountDto? Discount { get; set; }
+}
+
+public class DiscountDto
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string DiscountType { get; set; } = string.Empty;
+    public decimal DiscountValue { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public string Status { get; set; } = string.Empty;
 }
 
 public class CreateProductDto
@@ -26,4 +38,5 @@ public class CreateProductDto
     public string? ImageUrl { get; set; }
     public string Status { get; set; } = "Available";
     public int CategoryId { get; set; }
+    public int? DiscountId { get; set; }
 }

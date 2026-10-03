@@ -283,6 +283,10 @@ namespace OnlineStore.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -476,6 +480,8 @@ namespace OnlineStore.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("DiscountId");
+
                     b.HasIndex("Sku")
                         .IsUnique();
 
@@ -660,10 +666,21 @@ namespace OnlineStore.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("OnlineStore.Domain.Entities.Discount", "Discount")
+                        .WithMany("Products")
+                        .HasForeignKey("DiscountId");
+
                     b.Navigation("Category");
+
+                    b.Navigation("Discount");
                 });
 
             modelBuilder.Entity("OnlineStore.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("OnlineStore.Domain.Entities.Discount", b =>
                 {
                     b.Navigation("Products");
                 });

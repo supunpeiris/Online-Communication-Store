@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OnlineStore.Application.DTOs.Product;
 using OnlineStore.Application.Interfaces;
 using OnlineStore.Domain.Entities;
@@ -46,13 +47,30 @@ public class ProductsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAll() => Ok(await _productService.GetAllProductsAsync());
+    public async Task<IActionResult> GetAll()
+    {
+        // Explicitly include Discount so storefront sees it
+        var products = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Discount)
+            .ToListAsync();
+        return Ok(products);
+    }
 
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(int id)
     {
-        try { return Ok(await _productService.GetProductByIdAsync(id)); }
+        try 
+        { 
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Discount)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null) return NotFound(new { message = "Product not found" });
+            return Ok(product); 
+        }
         catch (Exception ex) { return NotFound(new { message = ex.Message }); }
     }
 

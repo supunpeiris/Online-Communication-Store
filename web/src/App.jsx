@@ -29,6 +29,7 @@ import ProfileOrders from './pages/customer/ProfileOrders';
 import ProfileCart from './pages/customer/ProfileCart';
 import OrderTracking from './pages/customer/OrderTracking';
 import ProfileWishlist from './pages/customer/ProfileWishlist';
+import AdminDiscounts from './pages/admin/AdminDiscounts';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -76,6 +77,7 @@ function AppRoutes() {
         <Route path="profile" element={<AdminProfile />} />
         <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />
+        <Route path="discounts" element={<AdminDiscounts />} />
       </Route>
 
     </Routes>

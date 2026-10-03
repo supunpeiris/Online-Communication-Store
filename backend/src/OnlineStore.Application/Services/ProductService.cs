@@ -19,16 +19,18 @@ public class ProductService : IProductService
     {
         var products = await _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Discount) // <-- Include Discount
+            .OrderByDescending(p => p.Id)
             .ToListAsync();
 
         return products.Select(MapToDto);
     }
 
-    // <-- NEW METHOD TO GET A SINGLE PRODUCT -->
     public async Task<ProductDto> GetProductByIdAsync(int id)
     {
         var product = await _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Discount) // <-- Include Discount
             .FirstOrDefaultAsync(p => p.Id == id);
             
         if (product == null) throw new Exception("Product not found");
@@ -50,19 +52,25 @@ public class ProductService : IProductService
             StockQuantity = dto.StockQuantity,
             ImageUrl = dto.ImageUrl,
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "Available" : dto.Status,
-            CategoryId = dto.CategoryId
+            CategoryId = dto.CategoryId,
+            DiscountId = dto.DiscountId // <-- Map DiscountId if provided
         };
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
         await _context.Entry(product).Reference(p => p.Category).LoadAsync();
+        await _context.Entry(product).Reference(p => p.Discount).LoadAsync(); // <-- Load Discount reference
 
         return MapToDto(product);
     }
 
     public async Task<ProductDto> UpdateProductAsync(int id, CreateProductDto dto)
     {
-        var product = await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id);
+        var product = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Discount)
+            .FirstOrDefaultAsync(p => p.Id == id);
+            
         if (product == null) throw new Exception("Product not found");
 
         if (!await _context.Categories.AnyAsync(c => c.Id == dto.CategoryId))
@@ -80,6 +88,7 @@ public class ProductService : IProductService
 
         await _context.SaveChangesAsync();
         await _context.Entry(product).Reference(p => p.Category).LoadAsync();
+        await _context.Entry(product).Reference(p => p.Discount).LoadAsync();
 
         return MapToDto(product);
     }
@@ -108,7 +117,17 @@ public class ProductService : IProductService
             ImageUrl = product.ImageUrl,
             Status = product.Status,
             CategoryId = product.CategoryId,
-            CategoryName = product.Category?.Name ?? "Unknown"
+            CategoryName = product.Category?.Name ?? "Unknown",
+            Discount = product.Discount != null ? new DiscountDto // <-- Map Discount object to DTO
+            {
+                Id = product.Discount.Id,
+                Title = product.Discount.Title,
+                DiscountType = product.Discount.DiscountType,
+                DiscountValue = product.Discount.DiscountValue,
+                StartDate = product.Discount.StartDate,
+                EndDate = product.Discount.EndDate,
+                Status = product.Discount.Status
+            } : null
         };
     }
 }
