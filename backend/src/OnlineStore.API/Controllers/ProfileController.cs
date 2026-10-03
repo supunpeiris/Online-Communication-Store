@@ -159,4 +159,23 @@ public class ProfileController : ControllerBase
 
         return Ok(new { message = "Password changed successfully!" });
     }
+
+    public class AdminUpdatePasswordDto
+{
+    public int UserId { get; set; }
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+[HttpPost("admin-update-password")]
+public async Task<IActionResult> AdminUpdatePassword([FromBody] AdminUpdatePasswordDto dto)
+{
+    var user = await _context.Users.FindAsync(dto.UserId);
+    if (user == null) return NotFound(new { message = "User not found." });
+
+    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+    await _context.SaveChangesAsync();
+
+    return Ok(new { message = "Password updated successfully!" });
+}
+
 }

@@ -1,5 +1,17 @@
-import { Outlet, Link } from "react-router-dom";
-import { LayoutDashboard, BarChart2, Users, Layout, Search, Bell, Mail, Moon, Package } from 'lucide-react';
+import { Outlet, Link, NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  BarChart2,
+  Users,
+  Layout,
+  Search,
+  Bell,
+  Mail,
+  Moon,
+  Package,
+  ShieldCheck,
+  Activity, // <-- Added Activity icon import
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminLayout() {
@@ -34,13 +46,31 @@ export default function AdminLayout() {
               <BarChart2 className="w-5 h-5 mr-3 text-gray-400" />
               Analytics
             </Link>
-            <Link
-              to="#"
-              className="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors"
+            <NavLink
+              to="/admin/customers"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
             >
-              <Users className="w-5 h-5 mr-3 text-gray-400" />
-              Customers
-            </Link>
+              <Users className="w-5 h-5 mr-3" /> Customers
+            </NavLink>
+
+            <NavLink
+              to="/admin/administration"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
+            >
+              <ShieldCheck className="w-5 h-5 mr-3" /> Manage Administration
+            </NavLink>
+            <NavLink
+              to="/admin/activity-logs"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
+            >
+              <Activity className="w-5 h-5 mr-3" /> Activity Logs
+            </NavLink>
           </nav>
 
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-8 mb-4 px-2">
@@ -58,8 +88,7 @@ export default function AdminLayout() {
               to="/admin/products"
               className="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors"
             >
-              <Package className="w-5 h-5 mr-3 text-gray-400" />{" "}
-              {/* <-- New Product link */}
+              <Package className="w-5 h-5 mr-3 text-gray-400" />
               Products
             </Link>
           </nav>

@@ -12,6 +12,9 @@ import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import Categories from './pages/admin/Categories';
 import Products from './pages/admin/Products';
+import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminAdministration from './pages/admin/AdminAdministration';
+import AdminActivityLog from './pages/admin/AdminActivityLog';
 
 // Customer Layout & Pages
 import CustomerLayout from './layouts/CustomerLayout'; 
@@ -64,6 +67,9 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route index element={<Dashboard />} />
+        <Route path="customers" element={<AdminCustomers />} />
+        <Route path="administration" element={<AdminAdministration />} />
+        <Route path="activity-logs" element={<AdminActivityLog />} />
         <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />
       </Route>
