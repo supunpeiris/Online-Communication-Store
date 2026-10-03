@@ -15,6 +15,8 @@ import Products from './pages/admin/Products';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminAdministration from './pages/admin/AdminAdministration';
 import AdminActivityLog from './pages/admin/AdminActivityLog';
+import AdminProfile from './pages/admin/AdminProfile';
+import AdminOrders from './pages/admin/AdminOrders';
 
 // Customer Layout & Pages
 import CustomerLayout from './layouts/CustomerLayout'; 
@@ -69,7 +71,9 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="customers" element={<AdminCustomers />} />
         <Route path="administration" element={<AdminAdministration />} />
+        <Route path="orders" element={<AdminOrders />} />
         <Route path="activity-logs" element={<AdminActivityLog />} />
+        <Route path="profile" element={<AdminProfile />} />
         <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />
       </Route>

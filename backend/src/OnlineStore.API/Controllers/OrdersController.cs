@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,13 +20,92 @@ public class OrdersController : ControllerBase
         _context = context;
     }
 
+    private async Task LogActivity(string action, string details)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value;
+        var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value ?? "Staff";
+
+        if (int.TryParse(userIdClaim, out int userId))
+        {
+            var user = await _context.Users.FindAsync(userId);
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = userId,
+                UserName = user?.Name ?? "Admin/Staff",
+                UserEmail = emailClaim ?? user?.Email ?? "N/A",
+                Role = roleClaim,
+                Action = action,
+                Module = "Orders",
+                Details = details
+            });
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    // GET: api/v1/orders/admin (Fetch all orders for Admin/Staff)
+    [HttpGet("admin")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IActionResult> GetAllAdminOrders()
+    {
+        var orders = await _context.Orders
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        var result = new List<object>();
+        foreach (var order in orders)
+        {
+            var user = await _context.Users.FindAsync(order.UserId);
+            var items = await _context.OrderItems
+                .Where(oi => oi.OrderId == order.Id)
+                .Join(_context.Products, oi => oi.ProductId, p => p.Id, (oi, p) => new
+                {
+                    p.Name,
+                    oi.Quantity,
+                    oi.UnitPrice,
+                    oi.Subtotal
+                })
+                .ToListAsync();
+
+            result.Add(new
+            {
+                order.Id,
+                order.OrderNumber,
+                order.Status,
+                order.Total,
+                order.CreatedAt,
+                CustomerName = user?.Name ?? "Guest",
+                CustomerEmail = user?.Email ?? "N/A",
+                Items = items
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // PUT: api/v1/orders/{id}/status (Admin/Staff update order status)
+    [HttpPut("{id}/status")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto dto)
+    {
+        var order = await _context.Orders.FindAsync(id);
+        if (order == null) return NotFound(new { message = "Order not found." });
+
+        string oldStatus = order.Status;
+        order.Status = dto.Status;
+        await _context.SaveChangesAsync();
+
+        await LogActivity("Updated", $"Changed order {order.OrderNumber} status from '{oldStatus}' to '{dto.Status}'");
+
+        return Ok(new { message = "Order status updated successfully!" });
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1. Create Address (mapped to actual Address entity properties)
             var address = new Address
             {
                 UserId = dto.UserId,
@@ -37,7 +117,6 @@ public class OrdersController : ControllerBase
             _context.Addresses.Add(address);
             await _context.SaveChangesAsync();
 
-            // 2. Create Order
             var order = new Order
             {
                 UserId = dto.UserId,
@@ -52,7 +131,6 @@ public class OrdersController : ControllerBase
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
-            // 3. Create Order Items & Update Stock
             foreach (var item in dto.Items)
             {
                 var product = await _context.Products.FindAsync(item.ProductId);
@@ -72,7 +150,6 @@ public class OrdersController : ControllerBase
                 _context.OrderItems.Add(orderItem);
             }
 
-            // 4. Create Payment Record
             var payment = new Payment
             {
                 OrderId = order.Id,
@@ -84,7 +161,6 @@ public class OrdersController : ControllerBase
             };
             _context.Payments.Add(payment);
 
-            // 5. Create Shipping Record
             var shipping = new Shipping
             {
                 OrderId = order.Id,
@@ -95,7 +171,6 @@ public class OrdersController : ControllerBase
             };
             _context.Shippings.Add(shipping);
 
-            // 6. Clear User Cart Items (Fixed with explicit EF Core FirstOrDefaultAsync)
             var cart = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == dto.UserId);
             if (cart != null)
             {
@@ -114,4 +189,9 @@ public class OrdersController : ControllerBase
             return StatusCode(500, new { message = "Failed to place order", error = ex.Message });
         }
     }
+}
+
+public class UpdateOrderStatusDto
+{
+    public string Status { get; set; } = string.Empty;
 }
