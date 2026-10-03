@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -15,6 +17,13 @@ import Products from './pages/admin/Products';
 import CustomerLayout from './layouts/CustomerLayout'; 
 import Home from './pages/customer/Home';               
 import ProductDetails from './pages/customer/ProductDetails';
+import Checkout from './pages/customer/Checkout';
+import ProfileLayout from './layouts/ProfileLayout';
+import ProfileDashboard from './pages/customer/ProfileDashboard';
+import ProfileOrders from './pages/customer/ProfileOrders';
+import ProfileCart from './pages/customer/ProfileCart';
+import OrderTracking from './pages/customer/OrderTracking';
+import ProfileWishlist from './pages/customer/ProfileWishlist';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -31,6 +40,17 @@ function AppRoutes() {
         <Route index element={<Home />} />
         {/* The product route strictly loads ProductDetails with an ID parameter */}
         <Route path="product/:id" element={<ProductDetails />} />
+        <Route path="checkout" element={<Checkout />} />
+
+         {/* Profile / Account Routes */}
+        <Route path="profile" element={<ProfileLayout />}>
+          <Route index element={<ProfileDashboard />} />
+          <Route path="cart" element={<ProfileCart />} />
+          <Route path="orders" element={<ProfileOrders />} />
+          <Route path="orders/:id" element={<OrderTracking />} />
+          <Route path="wishlist" element={<ProfileWishlist />} />
+        </Route>
+
       </Route>
 
       {/* Auth Routes */}
@@ -56,7 +76,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <WishlistProvider>
+          <CartProvider>
+            <AppRoutes />
+          </CartProvider>
+        </WishlistProvider>
       </AuthProvider>
     </BrowserRouter>
   );
