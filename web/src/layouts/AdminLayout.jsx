@@ -15,17 +15,28 @@ import {
   User as UserIcon,
   Home as HomeIcon,
   LogOut,
-  ShoppingBag,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminLayout() {
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [userRole, setUserRole] = useState("Admin");
   const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role || "Admin";
+        setUserRole(role);
+      } catch (err) {
+        console.error("Failed to parse token role", err);
+      }
+    }
+  }, [token]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -42,9 +53,9 @@ export default function AdminLayout() {
       <aside className="w-64 bg-white border-r border-gray-100 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-100">
           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-            <span className="text-white font-bold">M</span>
+            <span className="text-white font-bold">{userRole.charAt(0)}</span>
           </div>
-          <span className="text-lg font-bold">Store Admin</span>
+          <span className="text-lg font-bold capitalize">{userRole} Portal</span>
         </div>
 
         <div className="p-4 flex-1">
@@ -84,13 +95,13 @@ export default function AdminLayout() {
               <ShieldCheck className="w-5 h-5 mr-3" /> Manage Administration
             </NavLink>
             <NavLink
-  to="/admin/orders"
-  className={({ isActive }) =>
-    `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
-  }
->
-  <Package className="w-5 h-5 mr-3" /> Orders
-</NavLink>
+              to="/admin/orders"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+              }
+            >
+              <Package className="w-5 h-5 mr-3" /> Orders
+            </NavLink>
             <NavLink
               to="/admin/activity-logs"
               className={({ isActive }) =>
@@ -99,7 +110,6 @@ export default function AdminLayout() {
             >
               <Activity className="w-5 h-5 mr-3" /> Activity Logs
             </NavLink>
-
           </nav>
 
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-8 mb-4 px-2">
@@ -128,9 +138,13 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
         <header className="h-16 bg-[#f8f9fa] flex items-center justify-between px-6 relative">
-          <div className="flex items-center">
-            <Search className="w-5 h-5 text-gray-400 cursor-pointer" />
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-sm">
+              {userRole.charAt(0)}
+            </div>
+            <span className="font-bold text-gray-900 text-base">{userRole} Panel</span>
           </div>
+
           <div className="flex items-center space-x-4">
             <Moon className="w-5 h-5 text-gray-400 cursor-pointer" />
             <Mail className="w-5 h-5 text-gray-400 cursor-pointer" />

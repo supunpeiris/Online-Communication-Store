@@ -1,6 +1,29 @@
+import { useState, useEffect } from 'react';
 import { TrendingUp, RefreshCw, DollarSign } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 export default function Dashboard() {
+  const { token } = useAuth();
+  const [userName, setUserName] = useState('Admin');
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!token) return;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || payload.sub;
+        const res = await api.get(`/profile/${userId}`);
+        if (res.data && res.data.name) {
+          setUserName(res.data.name);
+        }
+      } catch (err) {
+        console.error("Failed to load user name", err);
+      }
+    };
+    fetchUser();
+  }, [token]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       
@@ -10,7 +33,7 @@ export default function Dashboard() {
         {/* Welcome Banner */}
         <div className="lg:col-span-1 bg-blue-500 rounded-2xl p-6 text-white relative overflow-hidden flex flex-col justify-between shadow-sm">
           <div className="relative z-10">
-            <h2 className="text-2xl font-bold mb-1">Welcome Admin</h2>
+            <h2 className="text-2xl font-bold mb-1">Welcome {userName}</h2>
             <p className="text-blue-100 text-sm mb-6">Check all the statistics</p>
             
             <div className="flex space-x-8">
@@ -24,7 +47,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          {/* Decorative Circle matching theme */}
           <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-blue-400 rounded-full opacity-50 blur-2xl"></div>
         </div>
 
@@ -74,7 +96,6 @@ export default function Dashboard() {
   );
 }
 
-// Helper Component for the small stat cards
 function StatCard({ title, value, trend, trendUp, icon, bgColor }) {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
