@@ -189,6 +189,50 @@ public class OrdersController : ControllerBase
             return StatusCode(500, new { message = "Failed to place order", error = ex.Message });
         }
     }
+
+    // PUT: api/v1/orders/{id}/cancel (Customer cancel order while Processing)
+    [HttpPut("{id}/cancel")]
+    public async Task<IActionResult> CancelOrder(int id)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return NotFound(new { message = "Order not found." });
+
+            // Only allow cancellation if status is Processing
+            if (order.Status != "Processing")
+            {
+                return BadRequest(new { message = "Order cannot be cancelled once it has left processing." });
+            }
+
+            string oldStatus = order.Status;
+            order.Status = "Cancelled";
+
+            // Restore product stock quantities upon cancellation
+            var orderItems = await _context.OrderItems.Where(oi => oi.OrderId == order.Id).ToListAsync();
+            foreach (var item in orderItems)
+            {
+                var product = await _context.Products.FindAsync(item.ProductId);
+                if (product != null)
+                {
+                    product.StockQuantity += item.Quantity;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            await LogActivity("Updated", $"Customer cancelled order {order.OrderNumber} (Status changed from '{oldStatus}' to 'Cancelled')");
+
+            return Ok(new { message = "Order cancelled successfully." });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, new { message = "Failed to cancel order", error = ex.Message });
+        }
+    }
 }
 
 public class UpdateOrderStatusDto
