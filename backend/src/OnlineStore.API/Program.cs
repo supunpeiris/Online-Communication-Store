@@ -5,7 +5,10 @@ using Microsoft.IdentityModel.Tokens;
 using OnlineStore.Infrastructure.Data;
 using OnlineStore.Application.Interfaces;
 using OnlineStore.Application.Services;
+using DotNetEnv;
 
+
+Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
