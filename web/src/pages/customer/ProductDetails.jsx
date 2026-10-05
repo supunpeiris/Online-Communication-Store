@@ -10,8 +10,14 @@ import {
   Truck,
   Star,
   Tag,
+  Trash2,
+  ShieldCheck,
+  MessageSquare,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import {
@@ -22,20 +28,58 @@ import {
 
 export default function ProductDetails() {
   const { id } = useParams();
+  const { user, token } = useAuth();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const [product, setProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
 
-  const [reviewForm, setReviewForm] = useState({
-    rating: 0,
-    review: "",
-    name: "",
-    email: "",
-  });
+  const [product, setProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [quantity, setQuantity] = useState(1);
+
+  // Review Form States
+  const [reviewForm, setReviewForm] = useState({ rating: 0, comment: "" });
   const [hoveredStar, setHoveredStar] = useState(0);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewMsg, setReviewMsg] = useState({ type: "", text: "" });
+
+  // Custom Delete Modal States
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const [isDeletingReview, setIsDeletingReview] = useState(false);
+
+  // Robust Admin check (supports token decoding and case insensitivity)
+  const isAdmin = (() => {
+    if (user?.role && String(user.role).toLowerCase() === "admin") return true;
+    if (user?.Role && String(user.Role).toLowerCase() === "admin") return true;
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const role =
+        payload[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] ||
+        payload["role"] ||
+        payload["Role"];
+      return typeof role === "string" && role.toLowerCase() === "admin";
+    } catch {
+      return false;
+    }
+  })();
+
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const res = await api.get(`/reviews/product/${id}`);
+      setReviews(res.data);
+    } catch (err) {
+      console.error("Failed to load reviews", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -50,10 +94,14 @@ export default function ProductDetails() {
             const matchedDisc = discRes.data.find(
               (d) =>
                 (prod.discountId && d.id === prod.discountId) ||
-                (d.products && d.products.some((p) => p && p.id === prod.id))
+                (d.products && d.products.some((p) => p && p.id === prod.id)),
             );
             if (matchedDisc) {
-              prod = { ...prod, discountId: matchedDisc.id, discount: matchedDisc };
+              prod = {
+                ...prod,
+                discountId: matchedDisc.id,
+                discount: matchedDisc,
+              };
             }
           }
           setProduct(prod);
@@ -64,9 +112,69 @@ export default function ProductDetails() {
         setIsLoading(false);
       }
     };
+
     fetchProduct();
+    fetchReviews();
     window.scrollTo(0, 0);
   }, [id]);
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!token) {
+      setReviewMsg({ type: "error", text: "Please log in to leave a review." });
+      return;
+    }
+    if (reviewForm.rating === 0) {
+      setReviewMsg({ type: "error", text: "Please select a star rating." });
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewMsg({ type: "", text: "" });
+
+    try {
+      await api.post("/reviews", {
+        productId: parseInt(id),
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+      });
+
+      setReviewMsg({
+        type: "success",
+        text: "Thank you! Your review has been published.",
+      });
+      setReviewForm({ rating: 0, comment: "" });
+      fetchReviews();
+    } catch (err) {
+      setReviewMsg({
+        type: "error",
+        text: err.response?.data?.message || "Failed to submit review.",
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const openDeleteModal = (review) => {
+    setReviewToDelete(review);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!reviewToDelete) return;
+
+    setIsDeletingReview(true);
+    try {
+      await api.delete(`/reviews/${reviewToDelete.id}`);
+      setShowDeleteModal(false);
+      setReviewToDelete(null);
+      fetchReviews();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete review.");
+    } finally {
+      setIsDeletingReview(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -100,11 +208,18 @@ export default function ProductDetails() {
 
   const activeDiscount =
     product && isDiscountActive(product.discount) ? product.discount : null;
-
   const finalPrice = product ? calculateFinalPrice(product) : 0;
 
+  const avgRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+        ).toFixed(1)
+      : 0;
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 relative">
+      {/* Breadcrumb Navigation */}
       <div className="bg-white border-b border-gray-100 py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center text-sm">
           <Link
@@ -129,8 +244,8 @@ export default function ProductDetails() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="flex flex-col lg:flex-row gap-8 mb-8">
+          {/* Product Image */}
           <div className="w-full lg:w-1/2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex items-center justify-center relative min-h-[400px]">
-            {/* Top-Left Discount Badge */}
             {activeDiscount && (
               <span className="absolute top-4 left-4 z-10 bg-gradient-to-r from-red-600 to-rose-500 text-white text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5" />
@@ -164,12 +279,30 @@ export default function ProductDetails() {
             )}
           </div>
 
+          {/* Product Details Header */}
           <div className="w-full lg:w-1/2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col">
-            <h1 className="text-3xl font-black text-gray-900 mb-6 uppercase">
+            <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase">
               {product.name}
             </h1>
 
-            <div className="flex items-center space-x-2 text-sm text-gray-600 font-medium mb-6 mt-auto">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="flex text-amber-400">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${star <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-gray-200"}`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-bold text-gray-700">
+                {avgRating > 0 ? avgRating : "No ratings"}
+              </span>
+              <span className="text-sm text-gray-400">
+                ({reviews.length} reviews)
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-2 text-sm text-gray-600 font-medium mb-6">
               <span>SKU:</span>
               <span className="text-gray-900">{product.sku}</span>
             </div>
@@ -188,7 +321,8 @@ export default function ProductDetails() {
               {activeDiscount && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="bg-red-50 text-red-600 border border-red-200 text-xs font-black px-2.5 py-1 rounded-lg">
-                    SAVE Rs. {(product.price - finalPrice).toFixed(2)} ({formatDiscountBadgeText(activeDiscount)})
+                    SAVE Rs. {(product.price - finalPrice).toFixed(2)} (
+                    {formatDiscountBadgeText(activeDiscount)})
                   </span>
                   {activeDiscount.title && (
                     <span className="text-xs text-gray-500 font-medium">
@@ -219,7 +353,7 @@ export default function ProductDetails() {
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden shrink-0">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition-colors"
+                  className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition-colors cursor-pointer"
                 >
                   -
                 </button>
@@ -237,7 +371,7 @@ export default function ProductDetails() {
                   onClick={() =>
                     setQuantity(Math.min(product.stockQuantity, quantity + 1))
                   }
-                  className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition-colors"
+                  className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition-colors cursor-pointer"
                 >
                   +
                 </button>
@@ -254,9 +388,9 @@ export default function ProductDetails() {
               </button>
 
               <button
-                onClick={() => {
-                  addToCart({ ...product, price: finalPrice }, quantity);
-                }}
+                onClick={() =>
+                  addToCart({ ...product, price: finalPrice }, quantity)
+                }
                 disabled={product.stockQuantity <= 0}
                 className="flex-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
@@ -264,7 +398,6 @@ export default function ProductDetails() {
               </button>
             </div>
 
-            {/* Wishlist Toggle Action */}
             <div className="flex items-center space-x-6 text-sm font-bold text-gray-700 border-b border-gray-100 pb-6 mb-6">
               <button
                 onClick={() => toggleWishlist(product)}
@@ -293,7 +426,6 @@ export default function ProductDetails() {
                   <p className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wider">
                     Charges may apply
                   </p>
-
                   <div className="flex items-center space-x-2 text-xs font-bold text-gray-500 uppercase tracking-wider mt-4">
                     <span>Payment Methods:</span>
                     <div className="flex space-x-1">
@@ -314,6 +446,7 @@ export default function ProductDetails() {
           </div>
         </div>
 
+        {/* Product Description */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Description</h2>
           <div className="prose max-w-none text-gray-600 whitespace-pre-line">
@@ -322,36 +455,98 @@ export default function ProductDetails() {
           </div>
         </div>
 
+        {/* Customer Reviews Section */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900 mb-8">
-            Customer Reviews
+          <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center">
+            <MessageSquare className="w-5 h-5 mr-3 text-blue-600" /> Customer
+            Reviews & Ratings
           </h2>
 
           <div className="flex flex-col lg:flex-row gap-12">
-            <div className="flex-1">
-              <h3 className="font-bold text-gray-900 mb-4">Reviews</h3>
-              <p className="text-gray-500 text-sm">There are no reviews yet.</p>
+            {/* Reviews Feed */}
+            <div className="flex-1 space-y-6">
+              <h3 className="font-bold text-gray-900 mb-4">
+                Customer Feedback ({reviews.length})
+              </h3>
+
+              {reviewsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                </div>
+              ) : reviews.length === 0 ? (
+                <p className="text-gray-500 text-sm italic">
+                  There are no reviews yet. Be the first to review this product!
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-5 rounded-2xl bg-gray-50/70 border border-gray-100 relative group"
+                    >
+                      {/* Admin Delete Action */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => openDeleteModal(rev)}
+                          className="absolute top-4 right-4 z-10 text-gray-400 hover:text-red-600 p-2 rounded-xl hover:bg-red-50 border border-transparent hover:border-red-100 transition-all cursor-pointer shadow-none hover:shadow-sm"
+                          title="Delete review (Admin action)"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      )}
+
+                      <div className="flex items-center space-x-3 mb-2 pr-10">
+                        <div className="flex text-amber-400">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-4 h-4 ${s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-bold text-gray-900 text-sm">
+                          {rev.userName}
+                        </span>
+                        {rev.verifiedPurchase && (
+                          <span className="inline-flex items-center text-[11px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                            <ShieldCheck className="w-3 h-3 mr-1 text-green-600" />{" "}
+                            Verified Purchase
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-sm text-gray-700 mb-2">
+                        {rev.comment}
+                      </p>
+                      <span className="text-[11px] text-gray-400">
+                        Reviewed on{" "}
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Submit Review Form */}
             <div className="flex-1 lg:max-w-xl">
-              <h3 className="font-bold text-gray-900 mb-2">
-                Be the first to review "{product.name}"
-              </h3>
+              <h3 className="font-bold text-gray-900 mb-2">Write a Review</h3>
               <p className="text-sm text-gray-500 mb-6">
-                Your email address will not be published. Required fields are
-                marked *
+                Share your thoughts with other customers.
               </p>
 
-              <form
-                className="space-y-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  alert("Review submitted!");
-                }}
-              >
+              {reviewMsg.text && (
+                <div
+                  className={`p-4 rounded-xl mb-6 text-sm font-medium ${reviewMsg.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-700"}`}
+                >
+                  {reviewMsg.text}
+                </div>
+              )}
+
+              <form className="space-y-5" onSubmit={handleReviewSubmit}>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Your rating <span className="text-red-500">*</span>
+                    Your Rating <span className="text-red-500">*</span>
                   </label>
                   <div className="flex space-x-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -366,11 +561,7 @@ export default function ProductDetails() {
                         className="focus:outline-none cursor-pointer"
                       >
                         <Star
-                          className={`w-5 h-5 ${
-                            hoveredStar >= star || reviewForm.rating >= star
-                              ? "fill-orange-400 text-orange-400"
-                              : "text-gray-300"
-                          } transition-colors`}
+                          className={`w-6 h-6 ${hoveredStar >= star || reviewForm.rating >= star ? "fill-amber-400 text-amber-400" : "text-gray-300"} transition-colors`}
                         />
                       </button>
                     ))}
@@ -379,61 +570,78 @@ export default function ProductDetails() {
 
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Your review <span className="text-red-500">*</span>
+                    Your Review <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
                     rows="4"
-                    value={reviewForm.review}
+                    value={reviewForm.comment}
                     onChange={(e) =>
-                      setReviewForm({ ...reviewForm, review: e.target.value })
+                      setReviewForm({ ...reviewForm, comment: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 focus:bg-white transition-colors"
+                    placeholder="What did you like or dislike about this product?"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 focus:bg-white transition-colors text-sm"
                   ></textarea>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={reviewForm.name}
-                      onChange={(e) =>
-                        setReviewForm({ ...reviewForm, name: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 focus:bg-white transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={reviewForm.email}
-                      onChange={(e) =>
-                        setReviewForm({ ...reviewForm, email: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 focus:bg-white transition-colors"
-                    />
-                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm cursor-pointer"
+                  disabled={submittingReview}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm cursor-pointer inline-flex items-center"
                 >
-                  SUBMIT
+                  {submittingReview ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  SUBMIT REVIEW
                 </button>
               </form>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center border border-gray-100 animate-in fade-in zoom-in duration-200">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Delete Review
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Are you sure you want to delete this review by{" "}
+              <strong className="text-gray-800">
+                {reviewToDelete?.userName}
+              </strong>
+              ? This action will be recorded in the activity logs.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeletingReview}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeletingReview}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl shadow-sm cursor-pointer transition-colors flex items-center justify-center"
+              >
+                {isDeletingReview ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

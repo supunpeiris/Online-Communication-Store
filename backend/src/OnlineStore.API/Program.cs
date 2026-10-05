@@ -7,8 +7,18 @@ using OnlineStore.Application.Interfaces;
 using OnlineStore.Application.Services;
 using DotNetEnv;
 
+// Search current directory and parent directories until .env is found
+var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, ".env")))
+{
+    currentDir = currentDir.Parent;
+}
 
-Env.Load();
+if (currentDir != null)
+{
+    Env.Load(Path.Combine(currentDir.FullName, ".env"));
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()

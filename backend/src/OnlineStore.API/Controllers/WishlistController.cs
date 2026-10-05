@@ -31,21 +31,32 @@ public class WishlistController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        var items = await _context.WishlistItems
-            .Where(wi => wi.WishlistId == wishlist.Id)
-            .Join(_context.Products,
-                wi => wi.ProductId,
-                p => p.Id,
-                (wi, p) => new {
-                    id = wi.Id, // Primary key of WishlistItem
-                    productId = p.Id,
-                    p.Name,
-                    p.Price,
-                    p.ImageUrl,
-                    p.StockQuantity,
-                    p.Brand
-                })
-            .ToListAsync();
+        // Join WishlistItems with Products and left join Discounts
+        var items = await (from wi in _context.WishlistItems
+                           where wi.WishlistId == wishlist.Id
+                           join p in _context.Products on wi.ProductId equals p.Id
+                           join d in _context.Discounts on p.DiscountId equals d.Id into pd
+                           from disc in pd.DefaultIfEmpty()
+                           select new
+                           {
+                               id = wi.Id,
+                               productId = p.Id,
+                               name = p.Name,
+                               price = p.Price,
+                               imageUrl = p.ImageUrl,
+                               stockQuantity = p.StockQuantity,
+                               brand = p.Brand,
+                               discount = disc != null ? new
+                               {
+                                   id = disc.Id,
+                                   title = disc.Title,
+                                   discountType = disc.DiscountType,
+                                   discountValue = disc.DiscountValue,
+                                   startDate = disc.StartDate,
+                                   endDate = disc.EndDate,
+                                   status = disc.Status
+                               } : null
+                           }).ToListAsync();
 
         return Ok(new { wishlist.Id, userId, items });
     }
@@ -72,7 +83,6 @@ public class WishlistController : ControllerBase
         }
         else
         {
-            // Verify product actually exists before adding
             var productExists = await _context.Products.AnyAsync(p => p.Id == dto.ProductId);
             if (!productExists) return NotFound(new { message = "Product does not exist" });
 
