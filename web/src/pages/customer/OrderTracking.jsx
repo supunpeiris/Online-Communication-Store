@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Package,
   CheckCircle2,
-  Truck,
   Clock,
   ArrowLeft,
   Loader2,
@@ -11,18 +10,17 @@ import {
   CreditCard,
   XCircle,
   AlertTriangle,
-  X,
-} from "lucide-react";
-import api from "../../services/api";
+} from 'lucide-react';
+import api from '../../services/api';
 
 export default function OrderTracking() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
-  // Custom Modal States
+  // Cancel Modal States
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -32,7 +30,7 @@ export default function OrderTracking() {
         const res = await api.get(`/profile/orders/${id}`);
         setOrder(res.data);
       } catch (err) {
-        setError("Failed to load order tracking details.");
+        setError('Failed to load order tracking details.');
       } finally {
         setIsLoading(false);
       }
@@ -46,9 +44,9 @@ export default function OrderTracking() {
     try {
       await api.put(`/orders/${id}/cancel`);
       setShowCancelModal(false);
-      navigate("/profile/orders");
+      navigate('/profile/orders');
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to cancel order.");
+      alert(err.response?.data?.message || 'Failed to cancel order.');
       setIsCancelling(false);
       setShowCancelModal(false);
     }
@@ -65,9 +63,7 @@ export default function OrderTracking() {
   if (error || !order) {
     return (
       <div className="bg-white rounded-3xl p-8 text-center border border-gray-100 shadow-sm">
-        <p className="text-red-500 font-bold mb-4">
-          {error || "Order not found."}
-        </p>
+        <p className="text-red-500 font-bold mb-4">{error || 'Order not found.'}</p>
         <Link
           to="/profile/orders"
           className="text-blue-600 font-bold hover:underline inline-flex items-center"
@@ -78,29 +74,50 @@ export default function OrderTracking() {
     );
   }
 
-  const isCancelled = order.status === "Cancelled";
+  const statusStr = (order.status || '').toLowerCase();
+  const isCancelled = statusStr === 'cancelled';
+  const isOutForDelivery = statusStr === 'out for delivery';
+  const isCompleted = statusStr === 'completed';
+  const isParcelReady = statusStr === 'parcel ready';
 
+  // Helper for status badge color
+  const getBadgeColor = () => {
+    switch (statusStr) {
+      case 'completed':
+        return 'bg-green-50 text-green-700 border border-green-200/60';
+      case 'cancelled':
+        return 'bg-red-50 text-red-600 border border-red-200/60';
+      case 'out for delivery':
+        return 'bg-amber-50 text-amber-700 border border-amber-200/60';
+      case 'parcel ready':
+        return 'bg-indigo-50 text-indigo-700 border border-indigo-200/60';
+      case 'processing':
+      default:
+        return 'bg-blue-50 text-blue-700 border border-blue-200/60';
+    }
+  };
+
+  // Progression steps mapping
   const steps = [
     {
-      title: "Order Placed",
+      title: 'Order Placed',
       subtitle: new Date(order.createdAt).toLocaleDateString(),
       completed: true,
     },
     {
-      title: "Processing",
-      subtitle: "Items are being packed",
+      title: 'Processing',
+      subtitle: 'Items are being packed',
       completed: !isCancelled,
     },
     {
-      title: "Shipped",
-      subtitle: order.Courier || "Express Delivery",
-      completed:
-        order.ShippingStatus === "Shipped" || order.Status === "Completed",
+      title: 'Shipped',
+      subtitle: order.courier || 'Express Delivery',
+      completed: !isCancelled && (isOutForDelivery || isCompleted || isParcelReady),
     },
     {
-      title: "Delivered",
-      subtitle: "Expected in 3-5 days",
-      completed: order.Status === "Completed",
+      title: 'Delivered',
+      subtitle: isCompleted ? 'Package delivered' : 'Expected in 3-5 days',
+      completed: !isCancelled && isCompleted,
     },
   ];
 
@@ -125,11 +142,7 @@ export default function OrderTracking() {
           </div>
           <div className="flex items-center space-x-3">
             <span
-              className={`text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider ${
-                isCancelled
-                  ? "bg-red-50 text-red-600"
-                  : "bg-blue-50 text-blue-700"
-              }`}
+              className={`text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider ${getBadgeColor()}`}
             >
               {order.status}
             </span>
@@ -147,7 +160,11 @@ export default function OrderTracking() {
                   className="flex flex-col items-center text-center p-4 rounded-2xl bg-gray-50/60 border border-gray-100 relative"
                 >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 font-bold ${step.completed ? "bg-green-500 text-white shadow-sm" : "bg-gray-200 text-gray-400"}`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 font-bold transition-colors ${
+                      step.completed
+                        ? 'bg-green-500 text-white shadow-sm'
+                        : 'bg-gray-200 text-gray-400'
+                    }`}
                   >
                     {step.completed ? (
                       <CheckCircle2 className="w-5 h-5" />
@@ -155,9 +172,7 @@ export default function OrderTracking() {
                       <Clock className="w-5 h-5" />
                     )}
                   </div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-1">
-                    {step.title}
-                  </h4>
+                  <h4 className="font-bold text-gray-900 text-sm mb-1">{step.title}</h4>
                   <p className="text-xs text-gray-500">{step.subtitle}</p>
                 </div>
               ))}
@@ -171,7 +186,7 @@ export default function OrderTracking() {
 
         {/* Actions bar */}
         <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-          {order.status === "Processing" && (
+          {order.status === 'Processing' && (
             <button
               onClick={() => setShowCancelModal(true)}
               className="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-3 px-6 rounded-xl transition-colors inline-flex items-center cursor-pointer"
@@ -201,24 +216,16 @@ export default function OrderTracking() {
                 className="flex items-center justify-between text-sm p-3 bg-gray-50/50 rounded-xl border border-gray-100"
               >
                 <div className="flex items-center space-x-3 truncate">
-                  <span className="font-bold text-gray-400">
-                    x{item.quantity}
-                  </span>
-                  <span className="font-medium text-gray-800 truncate">
-                    {item.name}
-                  </span>
+                  <span className="font-bold text-gray-400">x{item.quantity}</span>
+                  <span className="font-medium text-gray-800 truncate">{item.name}</span>
                 </div>
-                <span className="font-bold text-gray-900">
-                  Rs. {item.subtotal.toFixed(2)}
-                </span>
+                <span className="font-bold text-gray-900">Rs. {item.subtotal.toFixed(2)}</span>
               </div>
             ))}
           </div>
           <div className="border-t border-gray-100 mt-6 pt-4 flex justify-between items-center text-lg font-black text-gray-900">
             <span>Total Amount</span>
-            <span className="text-orange-500">
-              Rs. {order.total.toFixed(2)}
-            </span>
+            <span className="text-orange-500">Rs. {order.total.toFixed(2)}</span>
           </div>
         </div>
 
@@ -233,43 +240,37 @@ export default function OrderTracking() {
           </div>
           <div>
             <h3 className="font-bold text-gray-900 mb-2 flex items-center">
-              <CreditCard className="w-5 h-5 mr-3 text-green-500" /> Payment &
-              Courier
+              <CreditCard className="w-5 h-5 mr-3 text-green-500" /> Payment & Courier
             </h3>
             <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-1">
               <p>
-                <strong className="text-gray-900">Method:</strong>{" "}
-                {order.paymentMethod}
+                <strong className="text-gray-900">Method:</strong> {order.paymentMethod}
               </p>
               <p>
-                <strong className="text-gray-900">Payment Status:</strong>{" "}
-                <span className="text-green-600 font-bold">
-                  {order.paymentStatus}
-                </span>
+                <strong className="text-gray-900">Payment Status:</strong>{' '}
+                <span className="text-green-600 font-bold">{order.paymentStatus}</span>
               </p>
               <p>
-                <strong className="text-gray-900">Courier:</strong>{" "}
-                {order.courier}
+                <strong className="text-gray-900">Courier:</strong>{' '}
+                {order.courier || 'Express Delivery'}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Custom Popup Modal for Cancellation */}
+      {/* Cancel Order Confirmation Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center border border-gray-100 animate-in fade-in zoom-in duration-200">
             <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Cancel Order
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Cancel Order</h3>
             <p className="text-sm text-gray-500 mb-6">
-              Are you sure you want to cancel order{" "}
-              <strong className="text-gray-800">{order.orderNumber}</strong>?
-              This action cannot be undone.
+              Are you sure you want to cancel order{' '}
+              <strong className="text-gray-800">{order.orderNumber}</strong>? This action cannot be
+              undone.
             </p>
             <div className="flex space-x-3">
               <button
@@ -284,11 +285,7 @@ export default function OrderTracking() {
                 disabled={isCancelling}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl shadow-sm cursor-pointer transition-colors flex items-center justify-center"
               >
-                {isCancelling ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Yes, Cancel"
-                )}
+                {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Yes, Cancel'}
               </button>
             </div>
           </div>

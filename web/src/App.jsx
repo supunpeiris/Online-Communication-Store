@@ -17,6 +17,7 @@ import AdminAdministration from './pages/admin/AdminAdministration';
 import AdminActivityLog from './pages/admin/AdminActivityLog';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminCoupons from './pages/admin/AdminCoupons';
 
 // Customer Layout & Pages
 import CustomerLayout from './layouts/CustomerLayout'; 
@@ -78,6 +79,7 @@ function AppRoutes() {
         <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />
         <Route path="discounts" element={<AdminDiscounts />} />
+        <Route path="coupons" element={<AdminCoupons />} />
       </Route>
 
     </Routes>

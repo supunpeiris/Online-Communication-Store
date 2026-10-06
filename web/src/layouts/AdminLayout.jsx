@@ -15,7 +15,8 @@ import {
   User as UserIcon,
   Home as HomeIcon,
   LogOut,
-  Tag, // <-- Import Tag icon for Discounts
+  Tag, 
+  Ticket,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -53,7 +54,7 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-100 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-100">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3 shadow-sm">
             <span className="text-white font-bold">{userRole.charAt(0)}</span>
           </div>
           <span className="text-lg font-bold capitalize">{userRole} Portal</span>
@@ -64,24 +65,26 @@ export default function AdminLayout() {
             Dashboards
           </p>
           <nav className="space-y-1">
-            <Link
+            {/* NavLink with 'end' so it only highlights when exactly on /admin */}
+            <NavLink
               to="/admin"
-              className="flex items-center px-3 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-medium"
+              end
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
+              }
             >
               <LayoutDashboard className="w-5 h-5 mr-3" />
               eCommerce
-            </Link>
-            <Link
-              to="#"
-              className="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors"
-            >
-              <BarChart2 className="w-5 h-5 mr-3 text-gray-400" />
-              Analytics
-            </Link>
+            </NavLink>
+
             <NavLink
               to="/admin/customers"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
               <Users className="w-5 h-5 mr-3" /> Customers
@@ -90,23 +93,31 @@ export default function AdminLayout() {
             <NavLink
               to="/admin/administration"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
               <ShieldCheck className="w-5 h-5 mr-3" /> Manage Administration
             </NavLink>
+
             <NavLink
               to="/admin/orders"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
               <Package className="w-5 h-5 mr-3" /> Orders
             </NavLink>
+
             <NavLink
               to="/admin/activity-logs"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
               <Activity className="w-5 h-5 mr-3" /> Activity Logs
@@ -120,30 +131,49 @@ export default function AdminLayout() {
             <NavLink
               to="/admin/categories"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
-              <Layout className="w-5 h-5 mr-3 text-gray-400" />
+              <Layout className="w-5 h-5 mr-3" />
               Categories
             </NavLink>
+
             <NavLink
               to="/admin/products"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
-              <Package className="w-5 h-5 mr-3 text-gray-400" />
+              <Package className="w-5 h-5 mr-3" />
               Products
             </NavLink>
-            {/* Added Discounts directly below Products */}
+
             <NavLink
               to="/admin/discounts"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm ${isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
               }
             >
-              <Tag className="w-5 h-5 mr-3 text-gray-400" />
+              <Tag className="w-5 h-5 mr-3" />
               Discounts
+            </NavLink>
+
+            <NavLink
+              to="/admin/coupons"
+              className={({ isActive }) =>
+                `flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                  isActive ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                }`
+              }
+            >
+              <Ticket className="w-5 h-5 mr-3" />
+              Coupons
             </NavLink>
           </nav>
         </div>
@@ -151,7 +181,6 @@ export default function AdminLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navbar */}
         <header className="h-16 bg-[#f8f9fa] flex items-center justify-between px-6 relative">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-sm">
@@ -170,7 +199,6 @@ export default function AdminLayout() {
               </span>
             </div>
 
-            {/* Person Icon with Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <div
                 onClick={() => setShowDropdown(!showDropdown)}
@@ -209,7 +237,6 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* Dynamic Page Content */}
         <main className="flex-1 p-6 overflow-auto">
           <Outlet />
         </main>

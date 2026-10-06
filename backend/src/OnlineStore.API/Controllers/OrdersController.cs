@@ -117,17 +117,20 @@ public class OrdersController : ControllerBase
             _context.Addresses.Add(address);
             await _context.SaveChangesAsync();
 
-            var order = new Order
-            {
-                UserId = dto.UserId,
-                ShippingAddressId = address.Id,
-                BillingAddressId = address.Id,
-                OrderNumber = $"ORD-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
-                Status = "Processing",
-                Subtotal = dto.Items.Sum(i => i.UnitPrice * i.Quantity),
-                ShippingFee = 0.00m,
-                Total = dto.Items.Sum(i => i.UnitPrice * i.Quantity)
-            };
+           var order = new Order
+{
+    UserId = dto.UserId,
+    ShippingAddressId = address.Id,
+    BillingAddressId = address.Id,
+    CouponId = dto.CouponId,
+    OrderNumber = $"ORD-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
+    Status = "Processing",
+    Subtotal = dto.Items.Sum(i => i.UnitPrice * i.Quantity),
+    DiscountAmount = dto.DiscountAmount,
+    ShippingFee = 0.00m,
+    Total = Math.Max(0, dto.Items.Sum(i => i.UnitPrice * i.Quantity) - dto.DiscountAmount)
+};
+
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 

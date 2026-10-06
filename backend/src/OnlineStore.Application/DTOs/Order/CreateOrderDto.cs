@@ -11,6 +11,11 @@ public class CreateOrderDto
     public string City { get; set; } = string.Empty;
     public string PostalCode { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
+    
+    // Coupon fields
+    public int? CouponId { get; set; }
+    public decimal DiscountAmount { get; set; }
+    
     public List<OrderItemDto> Items { get; set; } = new();
 }
 

@@ -34,6 +34,22 @@ export default function ProfileOrders() {
     fetchOrders();
   }, []);
 
+  const getStatusBadgeClass = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-50 text-green-700 border border-green-200/60';
+      case 'cancelled':
+        return 'bg-red-50 text-red-600 border border-red-200/60';
+      case 'out for delivery':
+        return 'bg-amber-50 text-amber-700 border border-amber-200/60';
+      case 'parcel ready':
+        return 'bg-indigo-50 text-indigo-700 border border-indigo-200/60';
+      case 'processing':
+      default:
+        return 'bg-blue-50 text-blue-700 border border-blue-200/60';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64 bg-white rounded-3xl border border-gray-100 shadow-sm">
@@ -71,7 +87,9 @@ export default function ProfileOrders() {
                   <span className="text-xs text-gray-500 block mt-0.5">{new Date(order.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase">{order.status}</span>
+                  <span className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider ${getStatusBadgeClass(order.status)}`}>
+                    {order.status}
+                  </span>
                   <span className="font-black text-gray-900 text-lg">Rs. {order.total.toFixed(2)}</span>
                 </div>
               </div>
