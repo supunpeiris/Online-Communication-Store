@@ -18,6 +18,7 @@ import AdminActivityLog from './pages/admin/AdminActivityLog';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminCoupons from './pages/admin/AdminCoupons';
+import AdminRefunds from './pages/admin/AdminRefunds';
 
 // Customer Layout & Pages
 import CustomerLayout from './layouts/CustomerLayout'; 
@@ -31,6 +32,7 @@ import ProfileCart from './pages/customer/ProfileCart';
 import OrderTracking from './pages/customer/OrderTracking';
 import ProfileWishlist from './pages/customer/ProfileWishlist';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
+import RefundRequest from './pages/customer/RefundRequest';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -56,6 +58,7 @@ function AppRoutes() {
           <Route path="orders" element={<ProfileOrders />} />
           <Route path="orders/:id" element={<OrderTracking />} />
           <Route path="wishlist" element={<ProfileWishlist />} />
+          <Route path="/profile/orders/:id/refund" element={<RefundRequest />} />
         </Route>
 
       </Route>
@@ -80,6 +83,7 @@ function AppRoutes() {
         <Route path="products" element={<Products />} />
         <Route path="discounts" element={<AdminDiscounts />} />
         <Route path="coupons" element={<AdminCoupons />} />
+        <Route path="refunds" element={<AdminRefunds />} />
       </Route>
 
     </Routes>

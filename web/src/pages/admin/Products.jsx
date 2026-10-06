@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Package,
   Plus,
@@ -11,6 +11,8 @@ import {
   ArrowUpDown,
   Image as ImageIcon,
   UploadCloud,
+  Search,
+  Filter,
 } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -24,6 +26,10 @@ export default function Products() {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState("desc");
+
+  // Search & Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -80,6 +86,41 @@ export default function Products() {
       setSuccess(msg);
       setTimeout(() => setSuccess(""), 4000);
     }
+  };
+
+  // Filter products by Name / Category / SKU / Brand and Category Dropdown
+  const filteredProducts = useMemo(() => {
+    return products.filter((prod) => {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        prod.name?.toLowerCase().includes(query) ||
+        prod.categoryName?.toLowerCase().includes(query) ||
+        prod.sku?.toLowerCase().includes(query) ||
+        prod.brand?.toLowerCase().includes(query);
+
+      const matchesCategory =
+        selectedCategory === "All" ||
+        String(prod.categoryId) === String(selectedCategory);
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryFilterChange = (e) => {
+    setSelectedCategory(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("All");
+    setCurrentPage(1);
   };
 
   const openCreateModal = () => {
@@ -185,7 +226,7 @@ export default function Products() {
     }
   };
 
-  const sortedProducts = [...products].sort((a, b) =>
+  const sortedProducts = [...filteredProducts].sort((a, b) =>
     sortOrder === "asc" ? a.id - b.id : b.id - a.id,
   );
 
@@ -196,6 +237,7 @@ export default function Products() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 relative">
+      {/* Header Banner */}
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
@@ -209,32 +251,94 @@ export default function Products() {
           </div>
         </div>
 
-        {isAdmin && (
-          <button
-            onClick={openCreateModal}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center shadow-sm"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Product
-          </button>
-        )}
+        <div className="flex items-center space-x-3">
+          <span className="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full hidden sm:inline-block">
+            {filteredProducts.length} of {products.length} Products
+          </span>
+          {isAdmin && (
+            <button
+              onClick={openCreateModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold transition-colors flex items-center shadow-sm cursor-pointer"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Product
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center">
-          <AlertCircle className="w-5 h-5 mr-3" />
-          <span className="font-medium">{error}</span>
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center border border-red-100 shadow-sm">
+          <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
+          <span className="font-medium text-sm">{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 text-green-700 p-4 rounded-xl flex items-center">
-          <CheckCircle2 className="w-5 h-5 mr-3" />
-          <span className="font-medium">{success}</span>
+        <div className="bg-green-50 text-green-700 p-4 rounded-xl flex items-center border border-green-100 shadow-sm">
+          <CheckCircle2 className="w-5 h-5 mr-3 shrink-0" />
+          <span className="font-medium text-sm">{success}</span>
         </div>
       )}
 
+      {/* Main Table Container */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Search & Filter Toolbar */}
+        <div className="p-6 pb-4 flex flex-col sm:flex-row items-center gap-4 border-b border-gray-50">
+          {/* Search by Name, Category, SKU, or Brand */}
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by product name, category, SKU, or brand..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-9 py-2.5 bg-gray-50 hover:bg-gray-100/70 focus:bg-white text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors font-medium text-gray-800 placeholder-gray-400"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Filter by Category */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-56">
+              <Filter className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={selectedCategory}
+                onChange={handleCategoryFilterChange}
+                className="w-full pl-10 pr-8 py-2.5 bg-gray-50 hover:bg-gray-100/70 focus:bg-white text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 cursor-pointer transition-colors appearance-none"
+              >
+                <option value="All">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {(searchQuery || selectedCategory !== "All") && (
+              <button
+                onClick={handleClearFilters}
+                className="text-xs font-bold text-gray-500 hover:text-red-600 bg-gray-100 hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors cursor-pointer shrink-0"
+                title="Reset filters"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -285,18 +389,24 @@ export default function Products() {
                     <tr>
                       <td
                         colSpan={isAdmin ? 7 : 6}
-                        className="p-8 text-center text-gray-500"
+                        className="p-12 text-center text-gray-500"
                       >
-                        No products found.
+                        <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h3 className="font-bold text-gray-800 text-base">
+                          No matching products found
+                        </h3>
+                        <p className="text-gray-400 text-xs mt-1">
+                          Try adjusting your search terms or category filter.
+                        </p>
                       </td>
                     </tr>
                   ) : (
                     paginatedProducts.map((prod) => (
                       <tr
                         key={prod.id}
-                        className="border-b border-gray-50 hover:bg-gray-50/50"
+                        className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
                       >
-                        <td className="p-4 text-sm text-gray-500">
+                        <td className="p-4 text-sm text-gray-500 font-medium">
                           #{prod.id}
                         </td>
                         <td className="p-4">
@@ -324,25 +434,32 @@ export default function Products() {
                           {prod.brand || "-"}
                         </td>
                         <td className="p-4 text-sm text-gray-600">
-                          <span className="bg-gray-100 px-3 py-1 rounded-full">
+                          <span className="bg-gray-100 px-3 py-1 rounded-full text-xs font-semibold text-gray-700">
                             {prod.categoryName}
                           </span>
                         </td>
-                        <td className="p-4 text-sm font-semibold text-gray-900">
+                        <td className="p-4 text-sm font-bold text-gray-900">
                           Rs. {prod.price.toFixed(2)}
                         </td>
                         <td className="p-4 text-sm">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${prod.stockQuantity > 10 ? "bg-green-100 text-green-700" : prod.stockQuantity > 0 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                              prod.stockQuantity > 10
+                                ? "bg-green-100 text-green-700"
+                                : prod.stockQuantity > 0
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-red-100 text-red-700"
+                            }`}
                           >
                             {prod.stockQuantity} in stock
                           </span>
                         </td>
                         {isAdmin && (
-                          <td className="p-4 flex justify-end space-x-2">
+                          <td className="p-4 text-right space-x-2">
                             <button
                               onClick={() => openEditModal(prod)}
-                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer inline-flex"
+                              title="Edit product"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -354,7 +471,8 @@ export default function Products() {
                                   name: prod.name,
                                 })
                               }
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer inline-flex"
+                              title="Delete product"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -368,7 +486,7 @@ export default function Products() {
             </div>
             <TablePagination
               currentPage={currentPage}
-              totalItems={products.length}
+              totalItems={filteredProducts.length}
               rowsPerPage={rowsPerPage}
               onPageChange={setCurrentPage}
               onRowsPerPageChange={setRowsPerPage}
@@ -377,6 +495,7 @@ export default function Products() {
         )}
       </div>
 
+      {/* Add / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
@@ -386,7 +505,7 @@ export default function Products() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:bg-gray-100 p-2 rounded-full"
+                className="text-gray-400 hover:bg-gray-100 p-2 rounded-full cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -451,7 +570,7 @@ export default function Products() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -463,7 +582,7 @@ export default function Products() {
                         name="sku"
                         value={formData.sku}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -475,7 +594,7 @@ export default function Products() {
                         name="brand"
                         value={formData.brand}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -488,7 +607,7 @@ export default function Products() {
                       required
                       value={formData.categoryId}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                      className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="" disabled>
                         Select a Category
@@ -513,7 +632,7 @@ export default function Products() {
                         min="0"
                         value={formData.price}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -527,7 +646,7 @@ export default function Products() {
                         min="0"
                         value={formData.stockQuantity}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -540,7 +659,7 @@ export default function Products() {
                       rows="2"
                       value={formData.description}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                      className="w-full px-4 py-2 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     ></textarea>
                   </div>
                 </div>
@@ -550,14 +669,14 @@ export default function Products() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploading}
-                  className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg font-medium flex justify-center"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium flex justify-center items-center cursor-pointer transition-colors shadow-sm"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -571,9 +690,10 @@ export default function Products() {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center border border-gray-100">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
@@ -585,15 +705,17 @@ export default function Products() {
             </p>
             <div className="flex space-x-3">
               <button
-                onClick={() => setDeleteModal({ isOpen: false })}
-                className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium"
+                onClick={() =>
+                  setDeleteModal({ isOpen: false, id: null, name: "" })
+                }
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 disabled={isSubmitting}
-                className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-medium flex justify-center"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-medium flex justify-center items-center cursor-pointer transition-colors shadow-sm"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

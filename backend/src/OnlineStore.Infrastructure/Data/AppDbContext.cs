@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Shipping> Shippings { get; set; }
     public DbSet<ActivityLog> ActivityLogs { get; set; }
+    public DbSet<RefundRequest> RefundRequests { get; set; }
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

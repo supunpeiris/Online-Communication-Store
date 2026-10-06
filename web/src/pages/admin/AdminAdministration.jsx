@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   ShieldCheck,
   Loader2,
@@ -9,6 +9,7 @@ import {
   AlertCircle,
   CheckCircle2,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -23,6 +24,9 @@ export default function AdminAdministration() {
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Custom Delete Confirmation Modal State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -57,6 +61,27 @@ export default function AdminAdministration() {
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  // Filter staff by Name or Email
+  const filteredStaff = useMemo(() => {
+    if (!searchQuery.trim()) return staffList;
+    const query = searchQuery.toLowerCase().trim();
+    return staffList.filter(
+      (s) =>
+        s.name?.toLowerCase().includes(query) ||
+        s.email?.toLowerCase().includes(query)
+    );
+  }, [staffList, searchQuery]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
 
   const handleOpenAddModal = () => {
     setEditMode(false);
@@ -131,7 +156,7 @@ export default function AdminAdministration() {
     }
   };
 
-  const paginatedStaff = staffList.slice(
+  const paginatedStaff = filteredStaff.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -146,7 +171,8 @@ export default function AdminAdministration() {
 
   return (
     <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-      <div className="flex justify-between items-center mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900 flex items-center">
             <ShieldCheck className="w-6 h-6 mr-3 text-orange-500" /> Manage
@@ -167,6 +193,29 @@ export default function AdminAdministration() {
         )}
       </div>
 
+      {/* Search Toolbar */}
+      <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-9 py-2.5 bg-gray-50 hover:bg-gray-100/70 focus:bg-white text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors font-medium text-gray-800 placeholder-gray-400"
+          />
+          {searchQuery && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full cursor-pointer"
+              title="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {successMessage && (
         <div className="bg-green-50 text-green-700 p-4 rounded-xl mb-6 flex items-center text-sm font-medium border border-green-100 shadow-sm">
           <CheckCircle2 className="w-5 h-5 mr-2 flex-shrink-0 text-green-500" />
@@ -181,67 +230,85 @@ export default function AdminAdministration() {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-gray-100 text-gray-400 text-xs uppercase tracking-wider">
-              <th className="pb-4 font-bold">Name</th>
-              <th className="pb-4 font-bold">Email</th>
-              <th className="pb-4 font-bold">Phone</th>
-              <th className="pb-4 font-bold">Role</th>
-              <th className="pb-4 font-bold">Status</th>
-              {isAdmin && (
-                <th className="pb-4 font-bold text-right">Actions</th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 text-sm">
-            {paginatedStaff.map((s) => (
-              <tr key={s.id} className="hover:bg-gray-50/50">
-                <td className="py-4 font-bold text-gray-900">{s.name}</td>
-                <td className="py-4 text-gray-600">{s.email}</td>
-                <td className="py-4 text-gray-600">{s.phone || "N/A"}</td>
-                <td className="py-4">
-                  <span
-                    className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${s.role === "Admin" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"}`}
-                  >
-                    {s.role}
-                  </span>
-                </td>
-                <td className="py-4">
-                  <span className="bg-green-50 text-green-700 font-bold text-xs px-2.5 py-1 rounded-full uppercase">
-                    {s.status}
-                  </span>
-                </td>
-                {isAdmin && (
-                  <td className="py-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleOpenEditModal(s)}
-                      className="p-2 bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-xl transition-colors cursor-pointer inline-flex"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => confirmDelete(s)}
-                      className="p-2 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-xl transition-colors cursor-pointer inline-flex"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {filteredStaff.length === 0 ? (
+        <div className="text-center py-16 px-4">
+          <ShieldCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <h3 className="font-bold text-gray-800 text-base">No staff members found</h3>
+          <p className="text-gray-400 text-xs mt-1">
+            Try adjusting your search terms.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 text-xs uppercase tracking-wider">
+                  <th className="pb-4 font-bold">Name</th>
+                  <th className="pb-4 font-bold">Email</th>
+                  <th className="pb-4 font-bold">Phone</th>
+                  <th className="pb-4 font-bold">Role</th>
+                  <th className="pb-4 font-bold">Status</th>
+                  {isAdmin && (
+                    <th className="pb-4 font-bold text-right">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-sm">
+                {paginatedStaff.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 font-bold text-gray-900">{s.name}</td>
+                    <td className="py-4 text-gray-600">{s.email}</td>
+                    <td className="py-4 text-gray-600">{s.phone || "N/A"}</td>
+                    <td className="py-4">
+                      <span
+                        className={`text-xs font-bold px-3 py-1 rounded-full uppercase ${
+                          s.role === "Admin"
+                            ? "bg-purple-50 text-purple-700"
+                            : "bg-blue-50 text-blue-700"
+                        }`}
+                      >
+                        {s.role}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      <span className="bg-green-50 text-green-700 font-bold text-xs px-2.5 py-1 rounded-full uppercase">
+                        {s.status}
+                      </span>
+                    </td>
+                    {isAdmin && (
+                      <td className="py-4 text-right space-x-2">
+                        <button
+                          onClick={() => handleOpenEditModal(s)}
+                          className="p-2 bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-xl transition-colors cursor-pointer inline-flex"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(s)}
+                          className="p-2 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-xl transition-colors cursor-pointer inline-flex"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-      <TablePagination
-        currentPage={currentPage}
-        totalItems={staffList.length}
-        rowsPerPage={rowsPerPage}
-        onPageChange={setCurrentPage}
-        onRowsPerPageChange={setRowsPerPage}
-      />
+          <TablePagination
+            currentPage={currentPage}
+            totalItems={filteredStaff.length}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={setRowsPerPage}
+          />
+        </>
+      )}
 
       {/* Custom Delete Confirmation Modal */}
       {showDeleteModal && (

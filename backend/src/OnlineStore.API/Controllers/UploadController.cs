@@ -5,48 +5,38 @@ namespace OnlineStore.API.Controllers;
 
 [Route("api/v1/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin,Staff")] // Only admins/staff can upload
+[Authorize] // Allow any authenticated user (Customer, Staff, Admin) to upload
 public class UploadController : ControllerBase
 {
-    private readonly IWebHostEnvironment _env;
+    private readonly IWebHostEnvironment _environment;
 
-    public UploadController(IWebHostEnvironment env)
+    public UploadController(IWebHostEnvironment environment)
     {
-        _env = env;
+        _environment = environment;
     }
 
     [HttpPost]
-    public async Task<IActionResult> UploadImage(IFormFile file)
+    public async Task<IActionResult> Upload(IFormFile? file)
     {
-        try
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded." });
+
+        // Ensure wwwroot/uploads directory exists
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        if (!Directory.Exists(uploadsFolder))
         {
-            if (file == null || file.Length == 0)
-                return BadRequest(new { message = "No file uploaded." });
-
-            // Create the wwwroot/uploads directory if it doesn't exist
-            var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var uploadsFolder = Path.Combine(webRootPath, "uploads");
-            
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            // Generate a unique filename to prevent overwriting
-            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            // Save the file
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            // Return the full URL to the frontend
-            var imageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{uniqueFileName}";
-            return Ok(new { url = imageUrl });
+            Directory.CreateDirectory(uploadsFolder);
         }
-        catch (Exception ex)
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
         {
-            return StatusCode(500, new { message = "Failed to upload image.", error = ex.Message });
+            await file.CopyToAsync(stream);
         }
+
+        var url = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+        return Ok(new { url });
     }
 }
