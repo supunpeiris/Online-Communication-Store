@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Heart, ChevronRight, Store } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Heart, ChevronRight, Store, MapPin } from 'lucide-react';
 
 export default function ProfileLayout() {
   return (
@@ -47,6 +47,16 @@ export default function ProfileLayout() {
             >
               <Heart className="w-5 h-5 mr-3" /> Wishlist
             </NavLink>
+            <NavLink
+  to="/profile/addresses"
+  className={({ isActive }) =>
+    `flex items-center px-4 py-3 rounded-2xl font-bold text-sm transition-colors ${
+      isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
+    }`
+  }
+>
+  <MapPin className="w-5 h-5 mr-3" /> Saved Addresses
+</NavLink>
           </nav>
         </aside>
 

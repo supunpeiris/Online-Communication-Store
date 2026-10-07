@@ -33,6 +33,7 @@ import OrderTracking from './pages/customer/OrderTracking';
 import ProfileWishlist from './pages/customer/ProfileWishlist';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import RefundRequest from './pages/customer/RefundRequest';
+import ProfileAddresses from './pages/customer/ProfileAddresses';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -59,6 +60,7 @@ function AppRoutes() {
           <Route path="orders/:id" element={<OrderTracking />} />
           <Route path="wishlist" element={<ProfileWishlist />} />
           <Route path="/profile/orders/:id/refund" element={<RefundRequest />} />
+          <Route path="/profile/addresses" element={<ProfileAddresses />} />
         </Route>
 
       </Route>

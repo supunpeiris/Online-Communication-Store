@@ -9,10 +9,11 @@ import {
   Truck, 
   Ticket, 
   X, 
-  Tag, 
   ChevronDown, 
   ChevronUp, 
-  Sparkles 
+  Sparkles,
+  MapPin,
+  Plus
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -20,8 +21,14 @@ import api from '../../services/api';
 
 export default function Checkout() {
   const { cart, totalPrice, clearCart, getUserIdFromToken } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, token } = useAuth();
   const navigate = useNavigate();
+
+  // Saved Addresses State
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('new');
+  const [saveToAccount, setSaveToAccount] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -48,18 +55,92 @@ export default function Checkout() {
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Fetch all active coupons on page load
+  // Helper to split a full name
+  const splitName = (fullName) => {
+    if (!fullName) return { firstName: '', lastName: '' };
+    const parts = fullName.trim().split(' ');
+    return {
+      firstName: parts[0] || '',
+      lastName: parts.slice(1).join(' ') || ''
+    };
+  };
+
+  // Populate address and profile details into form
+  const applyAddressAndProfile = (addr, profile) => {
+    const nameSource = addr?.recipientName || profile?.name || user?.name || '';
+    const { firstName, lastName } = splitName(nameSource);
+
+    setFormData(prev => ({
+      ...prev,
+      firstName: firstName || prev.firstName,
+      lastName: lastName || prev.lastName,
+      email: profile?.email || user?.email || prev.email,
+      phone: addr?.phone || profile?.phone || user?.phone || prev.phone,
+      address: addr ? addr.addressLine : prev.address,
+      city: addr ? addr.city : prev.city,
+      postalCode: addr ? addr.postalCode : prev.postalCode
+    }));
+  };
+
   useEffect(() => {
-    const fetchAvailableCoupons = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/coupons/active');
-        setAvailableCoupons(res.data);
+        // 1. Fetch active coupons
+        const couponRes = await api.get('/coupons/active').catch(() => ({ data: [] }));
+        setAvailableCoupons(couponRes.data);
+
+        // 2. Fetch logged in user profile and addresses
+        if (isAuthenticated) {
+          const userId = getUserIdFromToken() || user?.id || 1;
+          let profileData = null;
+
+          try {
+            const profileRes = await api.get(`/profile/${userId}`);
+            profileData = profileRes.data;
+            setUserProfile(profileData);
+          } catch (e) {
+            console.error("Failed to fetch user profile", e);
+          }
+
+          const addrRes = await api.get('/addresses').catch(() => ({ data: [] }));
+          if (addrRes.data && addrRes.data.length > 0) {
+            setSavedAddresses(addrRes.data);
+            const defaultAddr = addrRes.data.find(a => a.isDefault) || addrRes.data[0];
+            setSelectedAddressId(defaultAddr.id);
+            applyAddressAndProfile(defaultAddr, profileData);
+          } else {
+            // No saved addresses yet: autofill user contact details
+            applyAddressAndProfile(null, profileData);
+          }
+        }
       } catch (err) {
-        console.error('Failed to load active coupons', err);
+        console.error('Failed to initialize checkout data', err);
       }
     };
-    fetchAvailableCoupons();
-  }, []);
+
+    fetchData();
+  }, [isAuthenticated]);
+
+  const handleSelectAddress = (addr) => {
+    setSelectedAddressId(addr.id);
+    applyAddressAndProfile(addr, userProfile);
+  };
+
+  const handleSelectNewAddress = () => {
+    setSelectedAddressId('new');
+    // Keep user's default contact info but clear destination fields
+    const { firstName, lastName } = splitName(userProfile?.name || user?.name || '');
+    setFormData(prev => ({
+      ...prev,
+      firstName: firstName || prev.firstName,
+      lastName: lastName || prev.lastName,
+      email: userProfile?.email || user?.email || prev.email,
+      phone: userProfile?.phone || user?.phone || prev.phone,
+      address: '',
+      city: '',
+      postalCode: ''
+    }));
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -107,8 +188,29 @@ export default function Checkout() {
 
     try {
       const userId = getUserIdFromToken() || 1;
+
+      let shippingAddressId = selectedAddressId !== 'new' ? selectedAddressId : null;
+      if (selectedAddressId === 'new' && saveToAccount && isAuthenticated) {
+        try {
+          const newAddrRes = await api.post('/addresses', {
+            recipientName: `${formData.firstName} ${formData.lastName}`.trim(),
+            phone: formData.phone,
+            addressLine: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            isDefault: savedAddresses.length === 0
+          });
+          if (newAddrRes.data?.id) {
+            shippingAddressId = newAddrRes.data.id;
+          }
+        } catch {
+          // Continue even if saving address fails
+        }
+      }
+
       const orderPayload = {
         userId,
+        shippingAddressId,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -194,43 +296,164 @@ export default function Checkout() {
               <Truck className="w-5 h-5 mr-3 text-blue-600"/> Shipping Details
             </h2>
 
+            {/* Saved Address Cards */}
+            {savedAddresses.length > 0 && (
+              <div className="mb-8">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  Select Delivery Destination
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  {savedAddresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    return (
+                      <div
+                        key={addr.id}
+                        onClick={() => handleSelectAddress(addr)}
+                        className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'border-blue-600 bg-blue-50/30 ring-2 ring-blue-500/20' 
+                            : 'border-gray-200 hover:border-gray-300 bg-gray-50/50'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold text-gray-900 text-sm">
+                            {addr.recipientName || `${formData.firstName} ${formData.lastName}`}
+                          </span>
+                          {addr.isDefault && (
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                              DEFAULT
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-1">{addr.addressLine}, {addr.city}</p>
+                        <p className="text-xs text-gray-400 mt-1">{addr.phone || formData.phone}</p>
+                      </div>
+                    );
+                  })}
+
+                  <div
+                    onClick={handleSelectNewAddress}
+                    className={`p-4 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${
+                      selectedAddressId === 'new'
+                        ? 'border-blue-500 bg-blue-50/30 text-blue-600 font-bold'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-500'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    <span className="text-xs font-bold">Use Another Address</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Contact Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">First Name *</label>
-                <input type="text" name="firstName" required value={formData.firstName} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+                <input 
+                  type="text" 
+                  name="firstName" 
+                  required 
+                  value={formData.firstName} 
+                  onChange={handleChange} 
+                  placeholder="First Name"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Last Name *</label>
-                <input type="text" name="lastName" required value={formData.lastName} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+                <input 
+                  type="text" 
+                  name="lastName" 
+                  required 
+                  value={formData.lastName} 
+                  onChange={handleChange} 
+                  placeholder="Last Name"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
-                <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+                <input 
+                  type="email" 
+                  name="email" 
+                  required 
+                  value={formData.email} 
+                  onChange={handleChange} 
+                  placeholder="name@example.com"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Phone *</label>
-                <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+                <input 
+                  type="tel" 
+                  name="phone" 
+                  required 
+                  value={formData.phone} 
+                  onChange={handleChange} 
+                  placeholder="+94 77 123 4567"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
               </div>
             </div>
 
+            {/* Destination Address Fields */}
             <div className="mb-6">
               <label className="block text-sm font-bold text-gray-700 mb-2">Address *</label>
-              <input type="text" name="address" required value={formData.address} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+              <input 
+                type="text" 
+                name="address" 
+                required 
+                value={formData.address} 
+                onChange={handleChange} 
+                placeholder="Street address, house number"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+              />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">City *</label>
-                <input type="text" name="city" required value={formData.city} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+                <input 
+                  type="text" 
+                  name="city" 
+                  required 
+                  value={formData.city} 
+                  onChange={handleChange} 
+                  placeholder="City"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Postal Code *</label>
-                <input type="text" name="postalCode" required value={formData.postalCode} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white" />
+                <input 
+                  type="text" 
+                  name="postalCode" 
+                  required 
+                  value={formData.postalCode} 
+                  onChange={handleChange} 
+                  placeholder="Postal Code"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
               </div>
             </div>
+
+            {/* Checkbox to save new address */}
+            {selectedAddressId === 'new' && isAuthenticated && (
+              <label className="flex items-center space-x-2.5 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={saveToAccount}
+                  onChange={(e) => setSaveToAccount(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-gray-700">Save this address to my profile for future orders</span>
+              </label>
+            )}
           </div>
 
           {/* Order Summary & Coupons Right Side */}
